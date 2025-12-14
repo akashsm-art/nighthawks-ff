@@ -20,15 +20,14 @@ body {
 .auth-bg {
   min-height: 100vh;
   background:
-    linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)),
-    url("./nighthawks-logo - Copy.jpg");
-  background-size: cover;        /* FIXED: FULL SCREEN WALLPAPER */
+    linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
+    url("./nighthawks-logo.jpg");
+  background-size: cover;
   background-repeat: no-repeat;
-  background-position: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background-position: center center;
+  background-attachment: fixed;
 }
+
 
 /* ===============================
    AUTH CARD
@@ -730,4 +729,12 @@ button.loading {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+
+@media (max-width: 768px) {
+  .auth-bg {
+    background-size: cover;
+    background-position: center top;
+  }
 }
