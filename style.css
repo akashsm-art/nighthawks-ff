@@ -18,21 +18,23 @@ body {
    AUTH BACKGROUND (LOGIN PAGE)
 ================================ */
  .auth-bg {
-  min-height: 100vh;
   width: 100vw;
-
+  min-height: 100svh; /* mobile-safe viewport */
   background:
     linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)),
     url("./nighthawks-logo.jpg");
 
-  background-size: cover;        /* IMPORTANT */
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: center center;
+  background-size: cover;
 
   display: flex;
   align-items: center;
   justify-content: center;
+
+  position: relative;
 }
+
 
 
 /* ===============================
@@ -756,5 +758,21 @@ button.loading {
 
     background-size: cover;
     background-position: center;
+  }
+}
+
+.auth-card {
+  position: relative;
+  margin: auto;
+}
+
+@media (max-width: 768px) {
+  .auth-bg {
+    padding: 20px;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 360px;
   }
 }
