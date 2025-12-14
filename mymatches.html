@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nighthawks FF | My Matches</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- TOP BANNER -->
+<div class="top-banner"></div>
+
+<!-- NAV BAR -->
+<nav class="nav-bar">
+  <div class="nav-left">
+    <span class="nav-title">NIGHTHAWKS</span>
+  </div>
+
+  <div class="nav-right">
+    <a href="dashboard.html">Dashboard</a>
+    <button onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- PAGE CONTENT -->
+<main class="page">
+  <h2 class="page-title">My Matches</h2>
+
+  <div id="myMatches"></div>
+</main>
+
+<script src="script.js"></script>
+
+<script>
+  // ===============================
+  // LOAD MY MATCHES
+  // ===============================
+  const user = JSON.parse(localStorage.getItem("user"));
+  const registrations = JSON.parse(localStorage.getItem("registrations")) || [];
+  const container = document.getElementById("myMatches");
+
+  if (!user) {
+    container.innerHTML = "<p>Please login to view your matches.</p>";
+  } else {
+    const myMatches = registrations.filter(r => r.team === user.team);
+
+    if (myMatches.length === 0) {
+      container.innerHTML = `
+        <div class="empty-box">
+          No matches booked yet.
+        </div>
+      `;
+    } else {
+      myMatches.forEach(m => {
+        const card = document.createElement("div");
+        card.className = "my-match-card";
+
+        card.innerHTML = `
+          <h3>${m.batch}</h3>
+          <p><b>Time:</b> ${m.time}</p>
+          <p><b>Players:</b></p>
+          <ul>
+            ${m.players.map(p => `<li>${p}</li>`).join("")}
+          </ul>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+  }
+</script>
+
+</body>
+</html>
