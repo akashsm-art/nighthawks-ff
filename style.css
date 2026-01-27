@@ -129,42 +129,31 @@ body {
 }
 
 /* ===============================
-   DASHBOARD HEADER (FIXED SIZE)
+   PREMIUM NAVBAR (FIXED)
 ================================ */
+
 nav {
-  background: #000;
-  padding: 10px 16px;
+  width: 100%;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #1e90ff;
-}
-
-nav .brand {
-  font-size: 18px;
-  font-weight: 700;
-  color: #3fb8ff;
-}
-
-/* TEAM INFO TOP RIGHT */
-#team-info {
-  display: flex;
   align-items: center;
-  gap: 10px;
+  padding: 14px 20px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(5, 15, 25, 0.95),
+    rgba(0, 0, 0, 0.95)
+  );
+
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(63, 184, 255, 0.35);
+  box-shadow: 0 4px 18px rgba(0, 180, 255, 0.15);
+
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-#team-info img {
-  height: 32px;
-  width: 32px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-#team-info span {
-  color: #3fb8ff;
-  font-weight: 600;
-  font-size: 14px;
-}
 
 /* ===============================
    MATCH SECTION
@@ -217,6 +206,11 @@ nav .brand {
 .match-card button:hover {
   background: #3fb8ff;
 }
+
+.match-card {
+  position: relative;
+}
+
 
 /* ===============================
    REGISTER FORM
@@ -775,4 +769,105 @@ button.loading {
     width: 100%;
     max-width: 360px;
   }
+}
+
+
+
+/* ===============================
+   NAVBAR LOGO FIX (FINAL)
+================================ */
+
+.nav-title img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(63, 184, 255, 0.6));
+}
+
+/* Prevent navbar wrapping weirdly on mobile */
+@media (max-width: 600px) {
+  .nav-bar {
+    flex-direction: row;
+  }
+
+  .nav-title {
+    font-size: 16px;
+  }
+}
+
+
+function animateSlotCount(el, target) {
+  let current = 0;
+  const speed = 20;
+
+  const interval = setInterval(() => {
+    current++;
+    el.textContent = current;
+
+    if (current >= target) {
+      el.textContent = target;
+      clearInterval(interval);
+    }
+  }, speed);
+}
+
+
+/* ===============================
+   SLOT COUNTER (PREMIUM)
+================================ */
+
+.slot-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.slot-count {
+  font-size: 26px;
+  font-weight: 800;
+  color: #3fb8ff;
+}
+
+.slot-total {
+  font-size: 14px;
+  color: #aaa;
+}
+
+/* FULL BUTTON STATE */
+.match-card button.full-btn {
+  background: #333;
+  color: #aaa;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.match-card button:disabled {
+  pointer-events: none;
+}
+
+/* ===============================
+   REGISTERED BADGE (PREMIUM)
+================================ */
+
+.registered-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: #000;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.6);
+}
+
+/* REGISTERED BUTTON STATE */
+.match-card button.registered-btn {
+  background: #1f3d2b;
+  color: #9fffc7;
+  cursor: not-allowed;
+  box-shadow: none;
 }

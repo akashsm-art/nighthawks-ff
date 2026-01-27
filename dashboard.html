@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nighthawks FF | Dashboard</title>
   <link rel="stylesheet" href="style.css">
@@ -9,27 +9,40 @@
 
 <body>
 
-<!-- TOP BANNER -->
-<div class="top-banner"></div>
+  <!-- ===============================
+       NAVBAR (USES YOUR EXISTING CSS)
+  ================================ -->
+  <div class="nav-bar">
 
-<!-- NAV BAR -->
-<nav class="nav-bar">
-  <div class="nav-left">
-    <span class="nav-title">NIGHTHAWKS</span>
+    <!-- LEFT: LOGO + NAME -->
+    <div class="nav-title">
+      <img 
+        src="nighthawks-logo3.png" 
+        alt="Nighthawks Logo"
+        style="height:32px; vertical-align:middle; margin-right:8px;"
+      >
+      Nighthawks FF
+    </div>
+
+    <!-- RIGHT: LINKS -->
+    <div class="nav-right">
+      <a href="mymatches.html">My Matches</a>
+      <button onclick="logout()">Logout</button>
+    </div>
+
   </div>
 
-  <div class="nav-right">
-    <a href="mymatches.html">My Matches</a>
-    <button onclick="logout()">Logout</button>
+  <!-- ===============================
+       MAIN PAGE CONTENT
+  ================================ -->
+  <div class="page">
+    <h2 class="page-title">Available Matches</h2>
+
+    <!-- JS FILLS THIS -->
+    <div id="matches"></div>
   </div>
-</nav>
 
-<!-- PAGE CONTENT -->
-<main class="page">
-  <h2 class="page-title">Available Matches</h2>
-  <div id="matches"></div>
-</main>
-
-<script src="script.js"></script>
+  <!-- SCRIPT AT BOTTOM (IMPORTANT) -->
+  <script src="script.js"></script>
 </body>
 </html>

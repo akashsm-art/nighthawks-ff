@@ -28,6 +28,22 @@ window.register = () => {
   msg.innerText = "Registered successfully. Login now.";
 };
 
+
+//ADMIN MOBILE NO
+
+const ADMIN_MOBILE = "9113277013"; // CHANGE THIS
+
+const ADMIN_CREDENTIALS = {
+  mobile: "9113277013",   // CHANGE THIS
+  password: "Akash007"    // CHANGE THIS
+};
+
+function adminLogout() {
+  localStorage.removeItem("admin");
+  window.location.href = "admin-login.html";
+}
+
+
 // ---------- LOGIN ----------
 window.login = () => {
   setLoginLoading(true);
@@ -63,6 +79,35 @@ window.login = () => {
 
 };
 
+function adminLogin() {
+  const mobile = document.getElementById("adminMobile").value;
+  const password = document.getElementById("adminPassword").value;
+  const msg = document.getElementById("msg");
+
+  if (!mobile || !password) {
+    msg.innerText = "Invalid credentials";
+    return;
+  }
+
+  if (
+    mobile === ADMIN_CREDENTIALS.mobile &&
+    password === ADMIN_CREDENTIALS.password
+  ) {
+    localStorage.setItem("admin", "true");
+    window.location.href = "admin.html";
+  } else {
+    msg.innerText = "Invalid credentials";
+  }
+}
+
+function requireAdminLogin() {
+  const isAdmin = localStorage.getItem("admin");
+  if (!isAdmin) {
+    window.location.href = "admin-login.html";
+  }
+}
+
+
 // ---------- LOGOUT ----------
 window.logout = () => {
   localStorage.removeItem("user");
@@ -70,23 +115,21 @@ window.logout = () => {
   window.location.href = "index.html";
 };
 
+function logout() {
+  localStorage.removeItem("user");
+  window.location.href = "index.html";
+}
+
+
 // ======================================
 // MATCH SYSTEM (12 TEAMS TOTAL)
 // ======================================
 
 // ---------- MATCH DATA ----------
-const matches = [
-  {
-    id: 1,
-    title: "Free Fire Scrim #101",
-    map: "Bermuda",
-    batches: [
-      { name: "Batch 1", time: "5:00 PM", limit: 4 },
-      { name: "Batch 2", time: "6:00 PM", limit: 4 },
-      { name: "Batch 3", time: "7:00 PM", limit: 4 }
-    ]
-  }
-];
+function getMatches() {
+  return JSON.parse(localStorage.getItem("matches")) || [];
+}
+
 
 // ---------- PAGE LOAD ----------
 window.onload = () => {
@@ -113,6 +156,11 @@ function loadMatches() {
   const matchBox = document.getElementById("matches");
   if (!matchBox) return;
 
+  const registrations =
+    JSON.parse(localStorage.getItem("registrations")) || [];
+
+  const user = JSON.parse(localStorage.getItem("user"));
+
   matchBox.innerHTML = `
     <div class="notice">
       Everyone must download maps:
@@ -120,22 +168,53 @@ function loadMatches() {
     </div>
   `;
 
-  matches.forEach(match => {
+  getMatches().forEach(match => {
+    const registeredCount = registrations.filter(
+      r => r.matchId === match.id
+    ).length;
+
+    const isFull = registeredCount >= 12;
+
+    const isRegistered =
+      user &&
+      registrations.some(
+        r => r.matchId === match.id && r.team === user.team
+      );
+
     const div = document.createElement("div");
     div.className = "match-card";
 
     div.innerHTML = `
+      ${isRegistered ? `<div class="registered-badge">Registered</div>` : ""}
+
       <h3>${match.title}</h3>
       <p>Map: ${match.map}</p>
-      <p>Total Teams: 12</p>
 
-      <button onclick="openRegisterForm(${match.id})">Register</button>
+      <div class="slot-row">
+        <span class="slot-count" data-count="${registeredCount}">0</span>
+        <span class="slot-total">/ 12 Teams</span>
+      </div>
+
+      <button
+        ${isFull || isRegistered ? "disabled" : ""}
+        class="${isFull ? "full-btn" : isRegistered ? "registered-btn" : ""}"
+        onclick="openRegisterForm(${match.id})"
+      >
+        ${isFull ? "FULL" : isRegistered ? "REGISTERED" : "Register"}
+      </button>
+
       <div id="register-form-${match.id}"></div>
     `;
 
     matchBox.appendChild(div);
+
+    animateSlotCount(
+      div.querySelector(".slot-count"),
+      registeredCount
+    );
   });
 }
+
 
 // ---------- OPEN INLINE REGISTER FORM ----------
 window.openRegisterForm = (matchId) => {
@@ -254,8 +333,7 @@ function saveRegistration(matchId, team, batch, players, logo) {
     JSON.stringify({ team, logo })
   );
 
-  alert(`Registered successfully\n${batch.name} - ${batch.time}`);
-  location.reload();
+  
 }
 
 function showAuthError(message) {
@@ -309,4 +387,204 @@ function showLoginSuccess(callback) {
   }, 900);
 }
 
+function requireLogin() {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) {
+    window.location.href = "index.html";
+  }
+}
 
+function requireAdmin() {
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (!user || user.mobile !== ADMIN_MOBILE) {
+    window.location.href = "dashboard.html";
+  }
+}
+
+
+// ======================================
+// MY MATCHES PAGE
+// ======================================
+
+function loadMyMatches() {
+  const box = document.getElementById("myMatches");
+  if (!box) return;
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) {
+    box.innerHTML = `<div class="empty-box">Please login first</div>`;
+    return;
+  }
+
+  const registrations =
+    JSON.parse(localStorage.getItem("registrations")) || [];
+
+  const myRegs = registrations.filter(
+    r => r.team === user.team
+  );
+
+  if (myRegs.length === 0) {
+    box.innerHTML = `
+      <div class="empty-box">
+        You have not registered for any matches yet
+      </div>
+    `;
+    return;
+  }
+
+  box.innerHTML = "";
+
+  myRegs.forEach(reg => {
+    const div = document.createElement("div");
+    div.className = "my-match-card";
+
+    div.innerHTML = `
+      <h3>${reg.team}</h3>
+
+      <p><b>Match:</b> Free Fire Scrim</p>
+      <p><b>Batch:</b> ${reg.batch}</p>
+      <p><b>Time:</b> ${reg.time}</p>
+
+      <p><b>Players:</b></p>
+      <ul>
+        <li><b>${reg.players[0]}</b> (IGL)</li>
+        <li>${reg.players[1]}</li>
+        <li>${reg.players[2]}</li>
+        <li>${reg.players[3]}</li>
+      </ul>
+
+      <p><small>Registered at: ${reg.registeredAt}</small></p>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+window.onload = () => {
+
+  if (document.getElementById("adminData")) {
+    requireAdminLogin();
+    loadAdminPanel();
+  }
+
+  if (
+    document.getElementById("matches") ||
+    document.getElementById("myMatches")
+  ) {
+    requireLogin();
+  }
+
+  if (document.getElementById("matches")) {
+    loadMatches();
+  }
+
+  if (document.getElementById("myMatches")) {
+    loadMyMatches();
+  }
+};
+
+
+
+function showSuccessAnimation() {
+  const overlay = document.createElement("div");
+  overlay.className = "success-overlay";
+
+  overlay.innerHTML = `
+    <div class="success-circle">
+      <div class="success-check"></div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  setTimeout(() => {
+    overlay.remove();
+    location.reload();
+  }, 1300);
+}
+
+
+
+function loadAdminPanel() {
+  const box = document.getElementById("adminData");
+  if (!box) return;
+
+  requireAdmin();
+
+  const registrations =
+    JSON.parse(localStorage.getItem("registrations")) || [];
+
+  if (registrations.length === 0) {
+    box.innerHTML = `<div class="empty-box">No registrations yet</div>`;
+    return;
+  }
+
+  box.innerHTML = "";
+
+  registrations.forEach((r, index) => {
+    const div = document.createElement("div");
+    div.className = "my-match-card";
+
+    div.innerHTML = `
+      <h3>${index + 1}. ${r.team}</h3>
+
+      <p><b>Match:</b> Free Fire Scrim</p>
+      <p><b>Batch:</b> ${r.batch}</p>
+      <p><b>Time:</b> ${r.time}</p>
+
+      <p><b>Players:</b></p>
+      <ul>
+        <li><b>${r.players[0]}</b> (IGL)</li>
+        <li>${r.players[1]}</li>
+        <li>${r.players[2]}</li>
+        <li>${r.players[3]}</li>
+      </ul>
+
+      <p><small>Registered at: ${r.registeredAt}</small></p>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+//MATCH CREATION LOGIC
+
+function addMatch() {
+  const title = document.getElementById("matchTitle").value.trim();
+  const map = document.getElementById("matchMap").value.trim();
+  const b1 = document.getElementById("b1").value.trim();
+  const b2 = document.getElementById("b2").value.trim();
+  const b3 = document.getElementById("b3").value.trim();
+  const msg = document.getElementById("adminMsg");
+
+  if (!title || !map || !b1 || !b2 || !b3) {
+    msg.innerText = "Please fill all fields";
+    return;
+  }
+
+  const matches =
+    JSON.parse(localStorage.getItem("matches")) || [];
+
+  const newMatch = {
+    id: Date.now(),
+    title,
+    map,
+    batches: [
+      { name: "Batch 1", time: b1, limit: 4 },
+      { name: "Batch 2", time: b2, limit: 4 },
+      { name: "Batch 3", time: b3, limit: 4 }
+    ]
+  };
+
+  matches.push(newMatch);
+  localStorage.setItem("matches", JSON.stringify(matches));
+
+  msg.innerText = "Match added successfully";
+
+  document.getElementById("matchTitle").value = "";
+  document.getElementById("matchMap").value = "";
+  document.getElementById("b1").value = "";
+  document.getElementById("b2").value = "";
+  document.getElementById("b3").value = "";
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nighthawks FF | Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="nav-bar">
+    <div class="nav-title">
+      <img src="nighthawks-logo3.png" style="height:32px; margin-right:8px;">
+      Admin Panel
+    </div>
+
+    <div class="nav-right">
+      <button onclick="adminLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <h2 class="page-title">Add Match</h2>
+
+    <div class="register-box">
+      <label>Match Title</label>
+      <input id="matchTitle" placeholder="Free Fire Scrim #101">
+
+      <label>Map</label>
+      <input id="matchMap" placeholder="Bermuda">
+
+      <label>Batch 1 Time</label>
+      <input id="b1" placeholder="5:00 PM">
+
+      <label>Batch 2 Time</label>
+      <input id="b2" placeholder="6:00 PM">
+
+      <label>Batch 3 Time</label>
+      <input id="b3" placeholder="7:00 PM">
+
+      <button onclick="addMatch()">Add Match</button>
+
+      <p id="adminMsg"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
