@@ -8,16 +8,21 @@
 </head>
 
 <body>
+  <div id="countdownBox" class="notice">
+  Registration closes in: <b id="countdownTimer">--:--:--</b>
+</div>
+
+  
 
   <!-- ===============================
-       NAVBAR (USES YOUR EXISTING CSS)
+       NAVBAR
   ================================ -->
   <div class="nav-bar">
 
     <!-- LEFT: LOGO + NAME -->
     <div class="nav-title">
-      <img 
-        src="nighthawks-logo3.png" 
+      <img
+        src="nighthawks-logo3.png"
         alt="Nighthawks Logo"
         style="height:32px; vertical-align:middle; margin-right:8px;"
       >
@@ -33,16 +38,27 @@
   </div>
 
   <!-- ===============================
-       MAIN PAGE CONTENT
+       MAIN CONTENT
   ================================ -->
   <div class="page">
     <h2 class="page-title">Available Matches</h2>
+    <div id="regStatus" class="reg-status"></div>
 
-    <!-- JS FILLS THIS -->
+
+    <!-- Filled by script.js -->
     <div id="matches"></div>
   </div>
 
-  <!-- SCRIPT AT BOTTOM (IMPORTANT) -->
+  <!-- ===============================
+       SCRIPTS
+  ================================ -->
   <script src="script.js"></script>
+
+  <!--MATCH CARD-->
+  <div id="register-form-${match.id}"></div>
+<div class="batch-teams" id="batch-teams-${match.id}"></div>
+
+
+
 </body>
 </html>

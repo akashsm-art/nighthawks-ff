@@ -1,118 +1,106 @@
-// ======================================
-// AUTH SYSTEM (MOCK)
-// ======================================
+/*************************************************
+ * CONSTANTS
+ *************************************************/
+const MAX_TEAMS_PER_BATCH = 12;
+const BATCHES = [
+  { name: "Batch 1", time: "5:00 PM - 6:00 PM" },
+  { name: "Batch 2", time: "6:00 PM - 7:00 PM" },
+  { name: "Batch 3", time: "7:00 PM - 9:00 PM" }
+];
 
-// ---------- REGISTER ----------
-window.register = () => {
+/*************************************************
+ * STORAGE HELPERS
+ *************************************************/
+function getUsers() {
+  return JSON.parse(localStorage.getItem("users")) || [];
+}
+function saveUsers(data) {
+  localStorage.setItem("users", JSON.stringify(data));
+}
+
+function getMatches() {
+  return JSON.parse(localStorage.getItem("matches")) || [];
+}
+function saveMatches(data) {
+  localStorage.setItem("matches", JSON.stringify(data));
+}
+
+function getRegistrations() {
+  return JSON.parse(localStorage.getItem("registrations")) || [];
+}
+function saveRegistrations(data) {
+  localStorage.setItem("registrations", JSON.stringify(data));
+}
+
+function isRegistrationOpen() {
+  return localStorage.getItem("registrationOpen") === "true";
+}
+
+/*************************************************
+ * USER AUTH
+ *************************************************/
+window.register = function () {
   const team = document.getElementById("team").value.trim();
   const mobile = document.getElementById("mobile").value.trim();
   const password = document.getElementById("password").value.trim();
   const msg = document.getElementById("msg");
 
-  if (!team || !mobile || !password) {
-  showAuthError("Invalid: missed area");
-  return;
-}
+  // Mobile validation: +91 + 10 digits
+  const mobileRegex = /^\+91\d{10}$/;
+  if (!mobileRegex.test(mobile)) {
+    showAuthError("Mobile must be +91 followed by 10 digits");
+    return;
+  }
 
+  // Password validation: min 8 chars, letters + numbers
+  const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  if (!passRegex.test(password)) {
+    showAuthError("Password must be 8+ chars with letters & numbers");
+    return;
+  }
 
-  let users = JSON.parse(localStorage.getItem("users")) || [];
+  const users = getUsers();
 
+  // Mobile uniqueness
   if (users.find(u => u.mobile === mobile)) {
-    showAuthError("Already exists");
+    showAuthError("Mobile already registered");
+    return;
+  }
+
+  // Password uniqueness
+  if (users.find(u => u.password === password)) {
+    showAuthError("Password already used. Choose another");
     return;
   }
 
   users.push({ team, mobile, password });
-  localStorage.setItem("users", JSON.stringify(users));
+  saveUsers(users);
 
   msg.innerText = "Registered successfully. Login now.";
 };
 
 
-//ADMIN MOBILE NO
-
-const ADMIN_MOBILE = "9113277013"; // CHANGE THIS
-
-const ADMIN_CREDENTIALS = {
-  mobile: "9113277013",   // CHANGE THIS
-  password: "Akash007"    // CHANGE THIS
-};
-
-function adminLogout() {
-  localStorage.removeItem("admin");
-  window.location.href = "admin-login.html";
-}
-
-
-// ---------- LOGIN ----------
-window.login = () => {
-  setLoginLoading(true);
+window.login = function () {
   const mobile = document.getElementById("mobile").value.trim();
   const password = document.getElementById("password").value.trim();
   const msg = document.getElementById("msg");
 
- if (!mobile || !password) {
-  setLoginLoading(false);          // ⛔ STOP animation
-  showAuthError("Invalid: missed area");
-  return;
-}
+  if (!mobile || !password) {
+    msg.innerText = "Invalid: missed area";
+    return;
+  }
 
-
-  let users = JSON.parse(localStorage.getItem("users")) || [];
-  const user = users.find(
+  const user = getUsers().find(
     u => u.mobile === mobile && u.password === password
   );
 
   if (!user) {
-  setLoginLoading(false);          // ⛔ STOP animation
-  showAuthError("Invalid login");
-  return;
-}
-
-
-  setLoginLoading(false);
-  localStorage.setItem("user", JSON.stringify(user));
-
-  showLoginSuccess(() => {
-  window.location.href = "dashboard.html";
-});
-
-};
-
-function adminLogin() {
-  const mobile = document.getElementById("adminMobile").value;
-  const password = document.getElementById("adminPassword").value;
-  const msg = document.getElementById("msg");
-
-  if (!mobile || !password) {
-    msg.innerText = "Invalid credentials";
+    msg.innerText = "Invalid login";
     return;
   }
 
-  if (
-    mobile === ADMIN_CREDENTIALS.mobile &&
-    password === ADMIN_CREDENTIALS.password
-  ) {
-    localStorage.setItem("admin", "true");
-    window.location.href = "admin.html";
-  } else {
-    msg.innerText = "Invalid credentials";
-  }
-}
-
-function requireAdminLogin() {
-  const isAdmin = localStorage.getItem("admin");
-  if (!isAdmin) {
-    window.location.href = "admin-login.html";
-  }
-}
-
-
-// ---------- LOGOUT ----------
-window.logout = () => {
-  localStorage.removeItem("user");
-  localStorage.removeItem("teamDisplay");
-  window.location.href = "index.html";
+  localStorage.setItem("user", JSON.stringify(user));
+  window.location.href = "dashboard.html";
 };
 
 function logout() {
@@ -120,60 +108,68 @@ function logout() {
   window.location.href = "index.html";
 }
 
-
-// ======================================
-// MATCH SYSTEM (12 TEAMS TOTAL)
-// ======================================
-
-// ---------- MATCH DATA ----------
-function getMatches() {
-  return JSON.parse(localStorage.getItem("matches")) || [];
+function requireLogin() {
+  if (!localStorage.getItem("user")) {
+    window.location.href = "index.html";
+  }
 }
 
-
-// ---------- PAGE LOAD ----------
-window.onload = () => {
-  showTeamTopRight();
-  loadMatches();
+/*************************************************
+ * ADMIN AUTH
+ *************************************************/
+const ADMIN = {
+  mobile: "9113277013",
+  password: "Akash007"
 };
 
-// ---------- SHOW TEAM + LOGO (TOP RIGHT) ----------
-function showTeamTopRight() {
-  const box = document.getElementById("team-info");
-  if (!box) return;
+function adminLogin() {
+  const mobile = document.getElementById("adminMobile").value;
+  const password = document.getElementById("adminPassword").value;
+  const msg = document.getElementById("msg");
 
-  const data = JSON.parse(localStorage.getItem("teamDisplay"));
-  if (!data) return;
-
-  box.innerHTML = `
-    ${data.logo ? `<img src="${data.logo}" class="team-logo">` : ""}
-    <span class="team-name">${data.team}</span>
-  `;
+  if (mobile === ADMIN.mobile && password === ADMIN.password) {
+    localStorage.setItem("admin", "true");
+    window.location.href = "admin.html";
+  } else {
+    msg.innerText = "Invalid credentials";
+  }
 }
 
-// ---------- LOAD MATCHES ----------
+function adminLogout() {
+  localStorage.removeItem("admin");
+  window.location.href = "admin-login.html";
+}
+
+function requireAdmin() {
+  if (localStorage.getItem("admin") !== "true") {
+    window.location.href = "admin-login.html";
+  }
+}
+
+/*************************************************
+ * MATCH DISPLAY
+ *************************************************/
 function loadMatches() {
-  const matchBox = document.getElementById("matches");
-  if (!matchBox) return;
+  const box = document.getElementById("matches");
+  if (!box) return;
 
-  const registrations =
-    JSON.parse(localStorage.getItem("registrations")) || [];
-
+  const matches = getMatches();
+  const registrations = getRegistrations();
   const user = JSON.parse(localStorage.getItem("user"));
+  const regOpen = isRegistrationOpen(); // ✅ store once
 
-  matchBox.innerHTML = `
+  box.innerHTML = `
     <div class="notice">
       Everyone must download maps:
       <b>Bermuda, Purgatory, Kalahari</b>
     </div>
   `;
 
-  getMatches().forEach(match => {
-    const registeredCount = registrations.filter(
+  matches.forEach(match => {
+    // total teams across all 3 batches (12 × 3 = 36)
+    const totalTeams = registrations.filter(
       r => r.matchId === match.id
     ).length;
-
-    const isFull = registeredCount >= 12;
 
     const isRegistered =
       user &&
@@ -181,339 +177,245 @@ function loadMatches() {
         r => r.matchId === match.id && r.team === user.team
       );
 
+    const isFull = totalTeams >= 36;
+
     const div = document.createElement("div");
     div.className = "match-card";
 
     div.innerHTML = `
-      ${isRegistered ? `<div class="registered-badge">Registered</div>` : ""}
-
       <h3>${match.title}</h3>
       <p>Map: ${match.map}</p>
-
-      <div class="slot-row">
-        <span class="slot-count" data-count="${registeredCount}">0</span>
-        <span class="slot-total">/ 12 Teams</span>
-      </div>
+      <p>${totalTeams} / 36 Teams</p>
 
       <button
-        ${isFull || isRegistered ? "disabled" : ""}
-        class="${isFull ? "full-btn" : isRegistered ? "registered-btn" : ""}"
+        ${!regOpen || isRegistered || isFull ? "disabled" : ""}
         onclick="openRegisterForm(${match.id})"
       >
-        ${isFull ? "FULL" : isRegistered ? "REGISTERED" : "Register"}
+        ${
+          !regOpen
+            ? "CLOSED"
+            : isRegistered
+            ? "REGISTERED"
+            : isFull
+            ? "FULL"
+            : "Register"
+        }
       </button>
 
       <div id="register-form-${match.id}"></div>
+      <div id="batch-teams-${match.id}"></div>
     `;
 
-    matchBox.appendChild(div);
+    box.appendChild(div);
 
-    animateSlotCount(
-      div.querySelector(".slot-count"),
-      registeredCount
-    );
+    // ✅ show batch-wise teams (Batch 1 / 2 / 3)
+    renderBatchTeams(match.id);
   });
 }
 
-
-// ---------- OPEN INLINE REGISTER FORM ----------
-window.openRegisterForm = (matchId) => {
+/*************************************************
+ * REGISTRATION FORM
+ *************************************************/
+function openRegisterForm(matchId) {
   const box = document.getElementById(`register-form-${matchId}`);
-
-  if (box.innerHTML !== "") {
-    box.innerHTML = "";
-    return;
-  }
+  if (!box) return;
 
   box.innerHTML = `
     <div class="register-box">
-      <h4>Match Registration</h4>
-
-      <label>Player 1 UID (IGL)</label>
-      <input id="uid1-${matchId}" placeholder="Player 1 UID">
-
-      <label>Player 2 UID</label>
-      <input id="uid2-${matchId}" placeholder="Player 2 UID">
-
-      <label>Player 3 UID</label>
-      <input id="uid3-${matchId}" placeholder="Player 3 UID">
-
-      <label>Player 4 UID</label>
-      <input id="uid4-${matchId}" placeholder="Player 4 UID">
-
-      <div class="igl-box">Player 1 is the IGL</div>
-
-      <label>Upload Team Logo (optional)</label>
-      <input type="file" id="logo-${matchId}" accept="image/*">
-
-      <button onclick="submitMatch(${matchId})">
-        Submit Registration
-      </button>
+      <input id="p1-${matchId}" placeholder="Player 1 (IGL)">
+      <input id="p2-${matchId}" placeholder="Player 2">
+      <input id="p3-${matchId}" placeholder="Player 3">
+      <input id="p4-${matchId}" placeholder="Player 4">
+      <button onclick="submitMatch(${matchId})">Submit</button>
     </div>
   `;
-};
+}
 
-// ---------- SUBMIT MATCH REGISTRATION ----------
-window.submitMatch = (matchId) => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user) {
-    alert("Login required");
+/*************************************************
+ * SUBMIT MATCH (CORE LOGIC)
+ *************************************************/
+function submitMatch(matchId) {
+  if (!isRegistrationOpen()) {
+    alert("Registration is closed");
     return;
   }
 
-  let registrations =
-    JSON.parse(localStorage.getItem("registrations")) || [];
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) return;
 
-  const match = matches.find(m => m.id === matchId);
+  const p1 = document.getElementById(`p1-${matchId}`).value.trim();
+  const p2 = document.getElementById(`p2-${matchId}`).value.trim();
+  const p3 = document.getElementById(`p3-${matchId}`).value.trim();
+  const p4 = document.getElementById(`p4-${matchId}`).value.trim();
 
-  if (registrations.find(r => r.matchId === matchId && r.team === user.team)) {
-    alert("Your team already registered");
+  if (!p1 || !p2 || !p3 || !p4) {
+    alert("Invalid: missed area");
+    return;
+  }
+
+  let registrations = getRegistrations();
+
+  if (registrations.some(r => r.matchId === matchId && r.team === user.team)) {
+    alert("Already registered");
     return;
   }
 
   let selectedBatch = null;
-  for (let batch of match.batches) {
+
+  for (let batch of BATCHES) {
     const count = registrations.filter(
       r => r.matchId === matchId && r.batch === batch.name
     ).length;
 
-    if (count < batch.limit) {
+    if (count < MAX_TEAMS_PER_BATCH) {
       selectedBatch = batch;
       break;
     }
   }
 
   if (!selectedBatch) {
-    alert("Match full");
+    alert("All batches full");
     return;
   }
-
-  const igl = document.getElementById(`uid1-${matchId}`).value.trim();
-  const p2 = document.getElementById(`uid2-${matchId}`).value.trim();
-  const p3 = document.getElementById(`uid3-${matchId}`).value.trim();
-  const p4 = document.getElementById(`uid4-${matchId}`).value.trim();
-
-  if (!igl || !p2 || !p3 || !p4) {
-    alert("Invalid: missed area");
-    return;
-  }
-
-  const logoInput = document.getElementById(`logo-${matchId}`);
-
-  if (logoInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      saveRegistration(matchId, user.team, selectedBatch, [igl, p2, p3, p4], reader.result);
-    };
-    reader.readAsDataURL(logoInput.files[0]);
-  } else {
-    saveRegistration(matchId, user.team, selectedBatch, [igl, p2, p3, p4], null);
-  }
-};
-
-// ---------- SAVE REGISTRATION ----------
-function saveRegistration(matchId, team, batch, players, logo) {
-  let registrations =
-    JSON.parse(localStorage.getItem("registrations")) || [];
 
   registrations.push({
     matchId,
-    team,
-    batch: batch.name,
-    time: batch.time,
-    igl: players[0],
-    players,
+    team: user.team,
+    batch: selectedBatch.name,
+    time: selectedBatch.time,
+    players: [p1, p2, p3, p4],
     registeredAt: new Date().toLocaleString()
   });
 
-  localStorage.setItem("registrations", JSON.stringify(registrations));
-
-  localStorage.setItem(
-    "teamDisplay",
-    JSON.stringify({ team, logo })
-  );
-
-  
+  saveRegistrations(registrations);
+  loadMatches();
 }
 
-function showAuthError(message) {
-  const card = document.querySelector(".auth-card");
-  const msg = document.getElementById("msg");
+/*************************************************
+ * BATCH DISPLAY
+ *************************************************/
+function renderBatchTeams(matchId) {
+  const box = document.getElementById(`batch-teams-${matchId}`);
+  if (!box) return;
 
-  if (msg) msg.innerText = message;
+  const registrations = getRegistrations();
+  let html = "";
 
-  if (card) {
-    card.classList.remove("shake", "error");
-    // reflow to restart animation
-    void card.offsetWidth;
-    card.classList.add("shake", "error");
+  BATCHES.forEach(batch => {
+    const teams = registrations.filter(
+      r => r.matchId === matchId && r.batch === batch.name
+    );
 
-    setTimeout(() => {
-      card.classList.remove("error");
-    }, 600);
-  }
+    html += `
+      <div class="batch-box">
+        <h4>${batch.name} (${teams.length}/12)</h4>
+        ${
+          teams.length === 0
+            ? `<p>No teams yet</p>`
+            : `<ul>${teams.map((t,i)=>`<li>${i+1}. ${t.team}</li>`).join("")}</ul>`
+        }
+      </div>
+    `;
+  });
+
+  box.innerHTML = html;
 }
 
-
-
-function setLoginLoading(isLoading) {
-  const btn = document.getElementById("loginBtn");
-  if (!btn) return;
-
-  if (isLoading) {
-    btn.classList.add("loading");
-    btn.innerText = "Logging in...";
-  } else {
-    btn.classList.remove("loading");
-    btn.innerText = "Login";
-  }
-}
-
-function showLoginSuccess(callback) {
-  const overlay = document.createElement("div");
-  overlay.className = "success-overlay";
-
-  overlay.innerHTML = `
-    <div class="success-circle">
-      <div class="success-check"></div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  setTimeout(() => {
-    overlay.remove();
-    if (callback) callback();
-  }, 900);
-}
-
-function requireLogin() {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user) {
-    window.location.href = "index.html";
-  }
-}
-
-function requireAdmin() {
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  if (!user || user.mobile !== ADMIN_MOBILE) {
-    window.location.href = "dashboard.html";
-  }
-}
-
-
-// ======================================
-// MY MATCHES PAGE
-// ======================================
-
+/*************************************************
+ * MY MATCHES
+ *************************************************/
 function loadMyMatches() {
   const box = document.getElementById("myMatches");
   if (!box) return;
 
   const user = JSON.parse(localStorage.getItem("user"));
-  if (!user) {
-    box.innerHTML = `<div class="empty-box">Please login first</div>`;
-    return;
-  }
+  const regs = getRegistrations().filter(r => r.team === user.team);
 
-  const registrations =
-    JSON.parse(localStorage.getItem("registrations")) || [];
-
-  const myRegs = registrations.filter(
-    r => r.team === user.team
-  );
-
-  if (myRegs.length === 0) {
-    box.innerHTML = `
-      <div class="empty-box">
-        You have not registered for any matches yet
-      </div>
-    `;
+  if (regs.length === 0) {
+    box.innerHTML = `<div class="empty-box">No matches yet</div>`;
     return;
   }
 
   box.innerHTML = "";
-
-  myRegs.forEach(reg => {
+  regs.forEach(r => {
     const div = document.createElement("div");
     div.className = "my-match-card";
-
     div.innerHTML = `
-      <h3>${reg.team}</h3>
-
-      <p><b>Match:</b> Free Fire Scrim</p>
-      <p><b>Batch:</b> ${reg.batch}</p>
-      <p><b>Time:</b> ${reg.time}</p>
-
-      <p><b>Players:</b></p>
-      <ul>
-        <li><b>${reg.players[0]}</b> (IGL)</li>
-        <li>${reg.players[1]}</li>
-        <li>${reg.players[2]}</li>
-        <li>${reg.players[3]}</li>
-      </ul>
-
-      <p><small>Registered at: ${reg.registeredAt}</small></p>
+      <h3>${r.team}</h3>
+      <p>${r.batch} | ${r.time}</p>
+      <p>${r.players.join(", ")}</p>
     `;
-
     box.appendChild(div);
   });
 }
 
-window.onload = () => {
-
-  if (document.getElementById("adminData")) {
-    requireAdminLogin();
-    loadAdminPanel();
+/*************************************************
+ * AUTO CLEAR AT 9 PM
+ *************************************************/
+function autoClearAt9PM() {
+  const now = new Date();
+  if (now.getHours() >= 21) {
+    localStorage.setItem("registrationOpen", "false");
+    localStorage.removeItem("registrations");
   }
+}
 
-  if (
-    document.getElementById("matches") ||
-    document.getElementById("myMatches")
-  ) {
-    requireLogin();
-  }
+/*************************************************
+ * BOOTSTRAP (ONLY ONE)
+ *************************************************/
+document.addEventListener("DOMContentLoaded", () => {
+  autoClearAt9PM();
 
   if (document.getElementById("matches")) {
+    requireLogin();
     loadMatches();
   }
 
   if (document.getElementById("myMatches")) {
+    requireLogin();
     loadMyMatches();
   }
-};
 
-
-
-function showSuccessAnimation() {
-  const overlay = document.createElement("div");
-  overlay.className = "success-overlay";
-
-  overlay.innerHTML = `
-    <div class="success-circle">
-      <div class="success-check"></div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  setTimeout(() => {
-    overlay.remove();
-    location.reload();
-  }, 1300);
+  if (document.getElementById("adminData")) {
+  requireAdmin();
+  showRegistrationStatus();
 }
 
+});
+
+// STATUS
+function showRegistrationStatus() {
+  const box = document.getElementById("regStatus");
+  if (!box) return;
+
+  const open = localStorage.getItem("registrationOpen") === "true";
+  box.innerText = open ? "Registration is OPEN" : "Registration is CLOSED";
+}
+
+// OPEN-CLOSE
+function openRegistration() {
+  localStorage.setItem("registrationOpen", "true");
+  showRegistrationStatus();
+  loadMatches(); // 🔥 FORCE UI REFRESH
+}
+
+function closeRegistration() {
+  localStorage.setItem("registrationOpen", "false");
+  showRegistrationStatus();
+  loadMatches(); // 🔥 FORCE UI REFRESH
+}
+const regOpen = localStorage.getItem("registrationOpen") === "true";
 
 
+// ADMIN PANEL
 function loadAdminPanel() {
   const box = document.getElementById("adminData");
   if (!box) return;
 
   requireAdmin();
 
-  const registrations =
-    JSON.parse(localStorage.getItem("registrations")) || [];
+  const matches = getMatches();
+  const registrations = getRegistrations();
 
   if (registrations.length === 0) {
     box.innerHTML = `<div class="empty-box">No registrations yet</div>`;
@@ -522,69 +424,257 @@ function loadAdminPanel() {
 
   box.innerHTML = "";
 
-  registrations.forEach((r, index) => {
-    const div = document.createElement("div");
-    div.className = "my-match-card";
+  matches.forEach(match => {
+    const matchDiv = document.createElement("div");
+    matchDiv.className = "my-match-card";
 
-    div.innerHTML = `
-      <h3>${index + 1}. ${r.team}</h3>
-
-      <p><b>Match:</b> Free Fire Scrim</p>
-      <p><b>Batch:</b> ${r.batch}</p>
-      <p><b>Time:</b> ${r.time}</p>
-
-      <p><b>Players:</b></p>
-      <ul>
-        <li><b>${r.players[0]}</b> (IGL)</li>
-        <li>${r.players[1]}</li>
-        <li>${r.players[2]}</li>
-        <li>${r.players[3]}</li>
-      </ul>
-
-      <p><small>Registered at: ${r.registeredAt}</small></p>
+    matchDiv.innerHTML = `
+      <h2>${match.title}</h2>
+      <p>Map: ${match.map}</p>
     `;
 
-    box.appendChild(div);
+    ["Batch 1", "Batch 2", "Batch 3"].forEach(batch => {
+      const teams = registrations.filter(
+        r => r.matchId === match.id && r.batch === batch
+      );
+
+      const batchDiv = document.createElement("div");
+      batchDiv.style.marginTop = "10px";
+
+      batchDiv.innerHTML = `
+        <h4>${batch} (${teams.length}/12)</h4>
+        ${
+          teams.length === 0
+            ? `<p class="empty-text">No teams</p>`
+            : `<ul>
+                ${teams
+                  .map(
+                    (t, i) => `
+                    <li>
+                      <strong>${i + 1}. ${t.team}</strong><br>
+                      Players: ${t.players.join(", ")}
+                    </li>
+                  `
+                  )
+                  .join("")}
+              </ul>`
+        }
+      `;
+
+      matchDiv.appendChild(batchDiv);
+    });
+
+    box.appendChild(matchDiv);
   });
 }
 
-//MATCH CREATION LOGIC
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("adminData")) {
+    loadAdminPanel();
+  }
+});
 
-function addMatch() {
-  const title = document.getElementById("matchTitle").value.trim();
-  const map = document.getElementById("matchMap").value.trim();
-  const b1 = document.getElementById("b1").value.trim();
-  const b2 = document.getElementById("b2").value.trim();
-  const b3 = document.getElementById("b3").value.trim();
-  const msg = document.getElementById("adminMsg");
-
-  if (!title || !map || !b1 || !b2 || !b3) {
-    msg.innerText = "Please fill all fields";
+//DOWNLOAD-PDF
+function downloadAdminPDF() {
+  if (!window.jspdf) {
+    alert("PDF library not loaded");
     return;
   }
 
-  const matches =
-    JSON.parse(localStorage.getItem("matches")) || [];
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
 
-  const newMatch = {
-    id: Date.now(),
-    title,
-    map,
-    batches: [
-      { name: "Batch 1", time: b1, limit: 4 },
-      { name: "Batch 2", time: b2, limit: 4 },
-      { name: "Batch 3", time: b3, limit: 4 }
-    ]
-  };
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+  const registrations = JSON.parse(localStorage.getItem("registrations")) || [];
 
-  matches.push(newMatch);
-  localStorage.setItem("matches", JSON.stringify(matches));
+  let y = 10;
 
-  msg.innerText = "Match added successfully";
+  doc.setFontSize(16);
+  doc.text("Nighthawks FF - Admin Report", 10, y);
+  y += 10;
 
-  document.getElementById("matchTitle").value = "";
-  document.getElementById("matchMap").value = "";
-  document.getElementById("b1").value = "";
-  document.getElementById("b2").value = "";
-  document.getElementById("b3").value = "";
+  doc.setFontSize(12);
+  doc.text("USERS", 10, y);
+  y += 8;
+
+  users.forEach((u, i) => {
+    doc.text(`${i + 1}. ${u.team} | ${u.mobile}`, 10, y);
+    y += 6;
+
+    if (y > 280) {
+      doc.addPage();
+      y = 10;
+    }
+  });
+
+  y += 10;
+  doc.text("REGISTERED TEAMS", 10, y);
+  y += 8;
+
+  registrations.forEach((r, i) => {
+    doc.text(
+      `${i + 1}. ${r.team} | ${r.batch} | ${r.time}`,
+      10,
+      y
+    );
+    y += 6;
+
+    r.players.forEach((p, idx) => {
+      doc.text(`   Player ${idx + 1}: ${p}`, 12, y);
+      y += 5;
+    });
+
+    y += 6;
+
+    if (y > 280) {
+      doc.addPage();
+      y = 10;
+    }
+  });
+
+  doc.save("nighthawks-registrations.pdf");
 }
+
+// USER PDF
+function downloadUsersPDF() {
+  if (!window.jspdf) {
+    alert("PDF library not loaded");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+
+  let y = 15;
+
+  doc.setFontSize(16);
+  doc.text("Nighthawks FF - Users List", 10, y);
+  y += 10;
+
+  if (users.length === 0) {
+    doc.setFontSize(12);
+    doc.text("No users found", 10, y);
+    doc.save("nighthawks-users.pdf");
+    return;
+  }
+
+  doc.setFontSize(12);
+
+  users.forEach((u, index) => {
+    doc.text(
+      `${index + 1}. Team: ${u.team} | Mobile: ${u.mobile}`,
+      10,
+      y
+    );
+    y += 7;
+
+    if (y > 280) {
+      doc.addPage();
+      y = 15;
+    }
+  });
+
+  doc.save("nighthawks-users.pdf");
+}
+
+// FORGOT PASSWORD
+function openForgotPassword() {
+  const mobile = prompt("Enter your registered mobile number (+91...)");
+  if (!mobile) return;
+
+  const users = getUsers();
+  const user = users.find(u => u.mobile === mobile);
+
+  if (!user) {
+    alert("Mobile not registered");
+    return;
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  localStorage.setItem("resetOTP", otp);
+  localStorage.setItem("resetMobile", mobile);
+
+  // MOCK OTP (frontend only)
+  alert("Your OTP is: " + otp);
+
+  verifyOTP();
+}
+
+function verifyOTP() {
+  const enteredOTP = prompt("Enter OTP");
+  const realOTP = localStorage.getItem("resetOTP");
+
+  if (enteredOTP !== realOTP) {
+    alert("Invalid OTP");
+    return;
+  }
+
+  resetPassword();
+}
+
+function resetPassword() {
+  const newPass = prompt("Enter new password (8+ chars, letters & numbers)");
+  if (!newPass) return;
+
+  const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  if (!passRegex.test(newPass)) {
+    alert("Password must be 8+ chars with letters & numbers");
+    return;
+  }
+
+  const users = getUsers();
+
+  if (users.find(u => u.password === newPass)) {
+    alert("Password already used by another user");
+    return;
+  }
+
+  const mobile = localStorage.getItem("resetMobile");
+  const user = users.find(u => u.mobile === mobile);
+  user.password = newPass;
+
+  saveUsers(users);
+
+  localStorage.removeItem("resetOTP");
+  localStorage.removeItem("resetMobile");
+
+  alert("Password reset successful. Login now.");
+}
+
+// MOB NO
+
+function isValidMobile(mobile) {
+  return /^\d{10}$/.test(mobile);
+}
+
+// MOB NUM STATUS
+function checkMobileStatus() {
+  const mobile = document.getElementById("mobile").value.trim();
+  const registerBtn = document.getElementById("registerBtn");
+  const loginBtn = document.getElementById("loginBtn");
+
+  if (!isValidMobile(mobile)) {
+  showAuthError("Enter valid 10-digit mobile number");
+  return;
+}
+
+
+  const users = getUsers();
+  const exists = users.some(u => u.mobile === mobile);
+
+  if (exists) {
+    loginBtn.style.display = "block";
+    registerBtn.style.display = "none";
+  } else {
+    registerBtn.style.display = "block";
+    loginBtn.style.display = "none";
+  }
+}
+
+
+
+
+

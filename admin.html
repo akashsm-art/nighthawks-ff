@@ -1,50 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <title>Nighthawks FF | Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- PDF library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nighthawks FF | Admin</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
+<!-- 🔒 ADMIN PROTECTION (MUST BE HERE) -->
+<script>
+  if (!localStorage.getItem("admin")) {
+    window.location.href = "admin-login.html";
+  }
+</script>
+
 <body>
 
-  <div class="nav-bar">
-    <div class="nav-title">
-      <img src="nighthawks-logo3.png" style="height:32px; margin-right:8px;">
-      Admin Panel
-    </div>
+  <!-- PAGE -->
+  <div class="page">
+    <h2 class="page-title">Registered Teams</h2>
 
+    <button onclick="downloadAdminPDF()">
+      Download All Registrations (PDF)
+    </button>
+
+    <div id="adminData"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
+
+<body>
+
+  <!-- REGISTRATION CONTROL -->
+<div class="admin-control">
+  <h3>Registration Control</h3>
+
+  <button onclick="openRegistration()" class="admin-btn open">
+    Open Registration
+  </button>
+
+  <button onclick="closeRegistration()" class="admin-btn close">
+    Close Registration
+  </button>
+  <button onclick="downloadUsersPDF()">
+  Download Users Info (PDF)
+</button>
+
+
+  <p id="regStatus"></p>
+</div>
+
+
+  <!-- NAVBAR -->
+  <div class="nav-bar">
+    <div class="nav-title">Nighthawks Admin Panel</div>
     <div class="nav-right">
       <button onclick="adminLogout()">Logout</button>
     </div>
   </div>
 
+  <!-- PAGE -->
   <div class="page">
-    <h2 class="page-title">Add Match</h2>
+    <h2 class="page-title">Registered Teams</h2>
 
-    <div class="register-box">
-      <label>Match Title</label>
-      <input id="matchTitle" placeholder="Free Fire Scrim #101">
+    <button onclick="downloadAdminPDF()">
+      Download All Registrations (PDF)
+    </button>
 
-      <label>Map</label>
-      <input id="matchMap" placeholder="Bermuda">
-
-      <label>Batch 1 Time</label>
-      <input id="b1" placeholder="5:00 PM">
-
-      <label>Batch 2 Time</label>
-      <input id="b2" placeholder="6:00 PM">
-
-      <label>Batch 3 Time</label>
-      <input id="b3" placeholder="7:00 PM">
-
-      <button onclick="addMatch()">Add Match</button>
-
-      <p id="adminMsg"></p>
-    </div>
+    <div id="adminData"></div>
   </div>
 
+  <!-- LOAD MAIN SCRIPT -->
   <script src="script.js"></script>
+
+  <!-- 🔐 THIS IS THE MISSING PART -->
+  <script>
+    requireAdmin();       // ⬅️ THIS WAS NEVER CALLED
+    loadAdminPanel();    // load admin data
+  </script>
+  <!-- jsPDF library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="script.js"></script>
+
+<script>
+  requireAdmin();
+  loadAdminPanel();
+</script>
+
+
 </body>
 </html>

@@ -20,17 +20,53 @@
 
 <div class="input-box">
   <span class="icon phone-icon"></span>
-  <input id="mobile" placeholder="Mobile Number">
+  <input
+    id="mobile"
+    type="tel"
+    placeholder="Mobile Number"
+    maxlength="10"
+    oninput="checkMobileStatus()"
+  />
 </div>
 
 <div class="input-box">
   <span class="icon lock-icon"></span>
-  <input id="password" type="password" placeholder="Password">
+  <input
+    id="password"
+    type="password"
+    placeholder="Password"
+  />
 </div>
 
+<button
+  id="registerBtn"
+  onclick="register()"
+  style="display:none"
+>
+  Register
+</button>
+
+<button
+  id="loginBtn"
+  onclick="login()"
+  style="display:none"
+>
+  Login
+</button>
+  <button id="registerBtn" onclick="register()" style="display:none">
+  Register
+</button>
+
+<button id="loginBtn" onclick="login()" style="display:none">
+  Login
+</button>
 
   <button onclick="register()">Register</button>
   <button id="loginBtn" onclick="login()">Login</button>
+  <p style="margin-top:10px;">
+  <a href="#" onclick="openForgotPassword()">Forgot password?</a>
+</p>
+
 
 
   <p id="msg"></p>

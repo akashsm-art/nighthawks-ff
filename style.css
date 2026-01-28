@@ -796,20 +796,6 @@ button.loading {
 }
 
 
-function animateSlotCount(el, target) {
-  let current = 0;
-  const speed = 20;
-
-  const interval = setInterval(() => {
-    current++;
-    el.textContent = current;
-
-    if (current >= target) {
-      el.textContent = target;
-      clearInterval(interval);
-    }
-  }, speed);
-}
 
 
 /* ===============================
@@ -870,4 +856,43 @@ function animateSlotCount(el, target) {
   color: #9fffc7;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.admin-control {
+  background: #0b0f14;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #1e90ff55;
+}
+
+.admin-control h3 {
+  margin-bottom: 10px;
+  color: #3fb8ff;
+}
+
+.admin-btn {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+.admin-btn.open {
+  background: #1e90ff;
+  color: #000;
+}
+
+.admin-btn.close {
+  background: #ff4d4d;
+  color: #000;
+}
+
+#regStatus {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #ccc;
 }
