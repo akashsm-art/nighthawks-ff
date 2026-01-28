@@ -39,45 +39,7 @@ function isRegistrationOpen() {
 /*************************************************
  * USER AUTH
  *************************************************/
-window.register = function () {
-  const team = document.getElementById("team").value.trim();
-  const mobile = document.getElementById("mobile").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const msg = document.getElementById("msg");
 
-  // Mobile validation: +91 + 10 digits
-  const mobileRegex = /^\+91\d{10}$/;
-  if (!mobileRegex.test(mobile)) {
-    showAuthError("Mobile must be +91 followed by 10 digits");
-    return;
-  }
-
-  // Password validation: min 8 chars, letters + numbers
-  const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-  if (!passRegex.test(password)) {
-    showAuthError("Password must be 8+ chars with letters & numbers");
-    return;
-  }
-
-  const users = getUsers();
-
-  // Mobile uniqueness
-  if (users.find(u => u.mobile === mobile)) {
-    showAuthError("Mobile already registered");
-    return;
-  }
-
-  // Password uniqueness
-  if (users.find(u => u.password === password)) {
-    showAuthError("Password already used. Choose another");
-    return;
-  }
-
-  users.push({ team, mobile, password });
-  saveUsers(users);
-
-  msg.innerText = "Registered successfully. Login now.";
-};
 
 
 window.login = function () {
@@ -644,35 +606,82 @@ function resetPassword() {
   alert("Password reset successful. Login now.");
 }
 
-// MOB NO
 
-function isValidMobile(mobile) {
-  return /^\d{10}$/.test(mobile);
-}
 
 // MOB NUM STATUS
 function checkMobileStatus() {
-  const mobile = document.getElementById("mobile").value.trim();
+  const mobileInput = document.getElementById("mobile");
   const registerBtn = document.getElementById("registerBtn");
   const loginBtn = document.getElementById("loginBtn");
+  const msg = document.getElementById("msg");
 
-  if (!isValidMobile(mobile)) {
-  showAuthError("Enter valid 10-digit mobile number");
-  return;
-}
+  const mobile = mobileInput.value.trim();
 
+  registerBtn.style.display = "none";
+  loginBtn.style.display = "none";
+  msg.innerText = "";
 
-  const users = getUsers();
-  const exists = users.some(u => u.mobile === mobile);
+  if (!/^\d{10}$/.test(mobile)) return;
+
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+  const exists = users.find(u => u.mobile === mobile);
 
   if (exists) {
     loginBtn.style.display = "block";
-    registerBtn.style.display = "none";
+    msg.innerText = "Mobile number found. Please login.";
   } else {
     registerBtn.style.display = "block";
-    loginBtn.style.display = "none";
+    msg.innerText = "New number detected. Please register.";
   }
 }
+
+function register() {
+  const team = document.getElementById("team").value.trim();
+  const mobile = document.getElementById("mobile").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const msg = document.getElementById("msg");
+
+  if (!team || !mobile || !password) {
+    msg.innerText = "All fields are required";
+    return;
+  }
+
+  // ✅ 10 digit India mobile
+  if (!/^\d{10}$/.test(mobile)) {
+    msg.innerText = "Mobile number must be 10 digits";
+    return;
+  }
+
+  // ✅ password rules
+  if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+    msg.innerText = "Password must be 8+ chars with letters & numbers";
+    return;
+  }
+
+  let users = JSON.parse(localStorage.getItem("users")) || [];
+
+  if (users.find(u => u.mobile === mobile)) {
+    msg.innerText = "User already exists. Please login.";
+    return;
+  }
+
+  if (users.find(u => u.password === password)) {
+    msg.innerText = "Password already used. Choose another.";
+    return;
+  }
+
+  users.push({ team, mobile, password });
+  localStorage.setItem("users", JSON.stringify(users));
+
+  msg.innerText = "Registered successfully. Now login.";
+
+  document.getElementById("registerBtn").style.display = "none";
+  document.getElementById("loginBtn").style.display = "block";
+}
+
+
+
+
 
 
 

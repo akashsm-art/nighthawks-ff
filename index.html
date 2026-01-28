@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+  />
   <title>Nighthawks FF | Login</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -10,35 +13,39 @@
 <body class="auth-bg">
 
 <div class="auth-card">
-  
+
   <img src="nighthawks-logo3.png" class="login-logo" alt="Nighthawks Logo">
 
- <div class="input-box">
-  <span class="icon user-icon"></span>
-  <input id="team" placeholder="Team Name">
-</div>
+  <!-- TEAM NAME -->
+  <div class="input-box">
+    <span class="icon user-icon"></span>
+    <input id="team" placeholder="Team Name">
+  </div>
 
-<div class="input-box">
-  <span class="icon phone-icon"></span>
+  <!-- MOBILE -->
   <input
-    id="mobile"
-    type="tel"
-    placeholder="Mobile Number"
-    maxlength="10"
-    oninput="checkMobileStatus()"
-  />
-</div>
+  id="mobile"
+  type="tel"
+  inputmode="numeric"
+  pattern="[0-9]*"
+  maxlength="10"
+  placeholder="Mobile Number (10 digits)"
+  oninput="checkMobileStatus()"
+/>
 
-<div class="input-box">
-  <span class="icon lock-icon"></span>
-  <input
-    id="password"
-    type="password"
-    placeholder="Password"
-  />
-</div>
 
-<button
+  <!-- PASSWORD -->
+  <div class="input-box">
+    <span class="icon lock-icon"></span>
+    <input
+      id="password"
+      type="password"
+      placeholder="Password"
+    />
+  </div>
+
+  <!-- REGISTER (HIDDEN BY DEFAULT) -->
+  <button
   id="registerBtn"
   onclick="register()"
   style="display:none"
@@ -53,26 +60,16 @@
 >
   Login
 </button>
-  <button id="registerBtn" onclick="register()" style="display:none">
-  Register
-</button>
 
-<button id="loginBtn" onclick="login()" style="display:none">
-  Login
-</button>
+  <!-- FORGOT PASSWORD -->
+  <p style="margin-top:12px; text-align:center;">
+    <a href="#" onclick="openForgotPassword()">Forgot password?</a>
+  </p>
 
-  <button onclick="register()">Register</button>
-  <button id="loginBtn" onclick="login()">Login</button>
-  <p style="margin-top:10px;">
-  <a href="#" onclick="openForgotPassword()">Forgot password?</a>
-</p>
-
-
-
+  <!-- MESSAGE -->
   <p id="msg"></p>
+
 </div>
-
-
 
 <script src="script.js"></script>
 </body>
