@@ -1,68 +1,42 @@
 /*************************************************
- * CONSTANTS
+ * CONSTANTS & CONFIGURATION
  *************************************************/
 const MAX_TEAMS_PER_BATCH = 12;
+
 const BATCHES = [
   { name: "Batch 1", time: "5:00 PM - 6:00 PM" },
   { name: "Batch 2", time: "6:00 PM - 7:00 PM" },
   { name: "Batch 3", time: "7:00 PM - 9:00 PM" }
 ];
 
+const ADMIN_CREDS = { mobile: "9113277013", password: "Akash007" };
+
 /*************************************************
  * STORAGE HELPERS
  *************************************************/
-function getUsers() {
-  return JSON.parse(localStorage.getItem("users")) || [];
-}
-function saveUsers(data) {
-  localStorage.setItem("users", JSON.stringify(data));
-}
+function getData(key) { return JSON.parse(localStorage.getItem(key)) || []; }
+function setData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
-function getMatches() {
-  return JSON.parse(localStorage.getItem("matches")) || [];
-}
-function saveMatches(data) {
-  localStorage.setItem("matches", JSON.stringify(data));
-}
-
-function getRegistrations() {
-  return JSON.parse(localStorage.getItem("registrations")) || [];
-}
-function saveRegistrations(data) {
-  localStorage.setItem("registrations", JSON.stringify(data));
-}
-
-function isRegistrationOpen() {
-  return localStorage.getItem("registrationOpen") === "true";
-}
+// Specific getters
+function getUsers() { return getData("users"); }
+function getMatches() { return getData("matches"); }
+function getRegistrations() { return getData("registrations"); }
 
 /*************************************************
  * USER AUTH
  *************************************************/
-
-
-
 window.login = function () {
   const mobile = document.getElementById("mobile").value.trim();
   const password = document.getElementById("password").value.trim();
   const msg = document.getElementById("msg");
 
-  if (!mobile || !password) {
-    msg.innerText = "Invalid: missed area";
-    return;
+  const user = getUsers().find(u => u.mobile === mobile && u.password === password);
+  if (user) {
+    localStorage.setItem("user", JSON.stringify(user));
+    window.location.href = "dashboard.html";
+  } else {
+    msg.innerText = "Invalid credentials";
   }
-
-  const user = getUsers().find(
-    u => u.mobile === mobile && u.password === password
-  );
-
-  if (!user) {
-    msg.innerText = "Invalid login";
-    return;
-  }
-
-  localStorage.setItem("user", JSON.stringify(user));
-  window.location.href = "dashboard.html";
 };
 
 function logout() {
@@ -79,17 +53,12 @@ function requireLogin() {
 /*************************************************
  * ADMIN AUTH
  *************************************************/
-const ADMIN = {
-  mobile: "9113277013",
-  password: "Akash007"
-};
-
 function adminLogin() {
   const mobile = document.getElementById("adminMobile").value;
   const password = document.getElementById("adminPassword").value;
   const msg = document.getElementById("msg");
 
-  if (mobile === ADMIN.mobile && password === ADMIN.password) {
+  if (mobile === ADMIN_CREDS.mobile && password === ADMIN_CREDS.password) {
     localStorage.setItem("admin", "true");
     window.location.href = "admin.html";
   } else {
@@ -109,8 +78,94 @@ function requireAdmin() {
 }
 
 /*************************************************
- * MATCH DISPLAY
+ * USER REGISTRATION & RECOVERY
  *************************************************/
+function checkMobileStatus() {
+  const mobile = document.getElementById("mobile").value.trim();
+  const registerBtn = document.getElementById("registerBtn");
+  const loginBtn = document.getElementById("loginBtn");
+  const msg = document.getElementById("msg");
+
+  registerBtn.style.display = "none";
+  loginBtn.style.display = "none";
+  msg.innerText = "";
+
+  if (!/^\d{10}$/.test(mobile)) return;
+
+  const users = getUsers();
+  if (users.find(u => u.mobile === mobile)) {
+    loginBtn.style.display = "block";
+    msg.innerText = "Account found. Please Login.";
+  } else {
+    registerBtn.style.display = "block";
+    msg.innerText = "New user? Register now.";
+  }
+}
+
+function register() {
+  const team = document.getElementById("team").value.trim();
+  const mobile = document.getElementById("mobile").value.trim();
+  const password = document.getElementById("password").value.trim();
+  
+  if (!team || !mobile || !password) { alert("All fields required"); return; }
+  
+  let users = getUsers();
+  if (users.find(u => u.mobile === mobile)) { alert("User exists"); return; }
+  
+  users.push({ team, mobile, password });
+  setData("users", users);
+  
+  alert("Registered! Please login.");
+  location.reload();
+}
+
+function openForgotPassword() {
+  const mobile = prompt("Enter your registered mobile number (+91...)");
+  if (!mobile) return;
+
+  const users = getUsers();
+  const user = users.find(u => u.mobile === mobile);
+  if (!user) { alert("Mobile not registered"); return; }
+
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  localStorage.setItem("resetOTP", otp);
+  localStorage.setItem("resetMobile", mobile);
+  
+  alert("Your OTP is: " + otp); 
+  verifyOTP();
+}
+
+function verifyOTP() {
+  const enteredOTP = prompt("Enter OTP");
+  const realOTP = localStorage.getItem("resetOTP");
+  if (enteredOTP !== realOTP) { alert("Invalid OTP"); return; }
+  resetPassword();
+}
+
+function resetPassword() {
+  const newPass = prompt("Enter new password (8+ chars, letters & numbers)");
+  if (!newPass) return;
+
+  const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  if (!passRegex.test(newPass)) { alert("Password must be 8+ chars with letters & numbers"); return; }
+
+  const users = getUsers();
+  const mobile = localStorage.getItem("resetMobile");
+  const user = users.find(u => u.mobile === mobile);
+  
+  user.password = newPass;
+  setData("users", users);
+  
+  localStorage.removeItem("resetOTP");
+  localStorage.removeItem("resetMobile");
+  alert("Password reset successful. Login now.");
+}
+
+/*************************************************
+ * DASHBOARD & MATCH DISPLAY (USER SIDE)
+ *************************************************/
+let pendingMatchId = null; 
+
 function loadMatches() {
   const box = document.getElementById("matches");
   if (!box) return;
@@ -118,144 +173,113 @@ function loadMatches() {
   const matches = getMatches();
   const registrations = getRegistrations();
   const user = JSON.parse(localStorage.getItem("user"));
-  const regOpen = isRegistrationOpen(); // ✅ store once
+  const regOpen = localStorage.getItem("registrationOpen") === "true";
+
+  if (matches.length === 0) {
+    box.innerHTML = `<p style="text-align:center; color:#666;">No matches available.</p>`;
+    return;
+  }
 
   box.innerHTML = `
     <div class="notice">
-      Everyone must download maps:
-      <b>Bermuda, Purgatory, Kalahari</b>
+       Everyone must download maps: <b>Bermuda, Purgatory, Kalahari</b>
     </div>
   `;
 
   matches.forEach(match => {
-    // total teams across all 3 batches (12 × 3 = 36)
-    const totalTeams = registrations.filter(
-      r => r.matchId === match.id
-    ).length;
-
-    const isRegistered =
-      user &&
-      registrations.some(
-        r => r.matchId === match.id && r.team === user.team
-      );
-
-    const isFull = totalTeams >= 36;
+    const teamsCount = registrations.filter(r => r.matchId === match.id).length;
+    const isRegistered = user && registrations.some(r => r.matchId === match.id && r.team === user.team);
+    const isFull = teamsCount >= 36;
+    const payMode = localStorage.getItem("paymentMode") || "free";
+    const priceTag = payMode === "paid" ? "PAID" : "FREE";
+    const idpTime = match.time || "TBA"; // New Field
 
     const div = document.createElement("div");
     div.className = "match-card";
-
     div.innerHTML = `
-      <h3>${match.title}</h3>
+      <div style="display:flex; justify-content:space-between;">
+        <h3 style="color:var(--primary-blue)">${match.title}</h3>
+        <span style="color:${payMode==='paid'?'gold':'#2ecc71'}; font-weight:bold;">${priceTag}</span>
+      </div>
       <p>Map: ${match.map}</p>
-      <p>${totalTeams} / 36 Teams</p>
-
-      <button
-        ${!regOpen || isRegistered || isFull ? "disabled" : ""}
-        onclick="openRegisterForm(${match.id})"
-      >
-        ${
-          !regOpen
-            ? "CLOSED"
-            : isRegistered
-            ? "REGISTERED"
-            : isFull
-            ? "FULL"
-            : "Register"
-        }
+      <p style="color:#ff4d4d; font-weight:bold;">IDP Time: ${idpTime}</p>
+      <p>${teamsCount} / 36 Teams</p>
+      
+      <button ${!regOpen || isRegistered || isFull ? "disabled" : ""} onclick="initiateRegistration(${match.id})">
+        ${!regOpen ? "CLOSED" : isRegistered ? "REGISTERED" : isFull ? "FULL" : "Register"}
       </button>
 
       <div id="register-form-${match.id}"></div>
       <div id="batch-teams-${match.id}"></div>
     `;
-
     box.appendChild(div);
-
-    // ✅ show batch-wise teams (Batch 1 / 2 / 3)
     renderBatchTeams(match.id);
   });
 }
 
-/*************************************************
- * REGISTRATION FORM
- *************************************************/
-function openRegisterForm(matchId) {
+function initiateRegistration(matchId) {
   const box = document.getElementById(`register-form-${matchId}`);
-  if (!box) return;
-
   box.innerHTML = `
     <div class="register-box">
       <input id="p1-${matchId}" placeholder="Player 1 (IGL)">
       <input id="p2-${matchId}" placeholder="Player 2">
       <input id="p3-${matchId}" placeholder="Player 3">
       <input id="p4-${matchId}" placeholder="Player 4">
-      <button onclick="submitMatch(${matchId})">Submit</button>
+      <button onclick="checkPaymentAndSubmit(${matchId})">Submit Team</button>
     </div>
   `;
 }
 
-/*************************************************
- * SUBMIT MATCH (CORE LOGIC)
- *************************************************/
+function checkPaymentAndSubmit(matchId) {
+  const paymentMode = localStorage.getItem("paymentMode") || "free";
+  const p1 = document.getElementById(`p1-${matchId}`).value;
+  if (!p1) { alert("Please fill player details"); return; }
+
+  if (paymentMode === "paid") {
+    // Show QR Modal logic here (simplified for this script)
+    if(confirm("This is a PAID match. Did you scan the QR code?")) {
+        submitMatch(matchId);
+    }
+  } else {
+    submitMatch(matchId);
+  }
+}
+
 function submitMatch(matchId) {
-  if (!isRegistrationOpen()) {
-    alert("Registration is closed");
-    return;
-  }
-
   const user = JSON.parse(localStorage.getItem("user"));
-  if (!user) return;
+  const p1 = document.getElementById(`p1-${matchId}`).value;
+  const p2 = document.getElementById(`p2-${matchId}`).value;
+  const p3 = document.getElementById(`p3-${matchId}`).value;
+  const p4 = document.getElementById(`p4-${matchId}`).value;
 
-  const p1 = document.getElementById(`p1-${matchId}`).value.trim();
-  const p2 = document.getElementById(`p2-${matchId}`).value.trim();
-  const p3 = document.getElementById(`p3-${matchId}`).value.trim();
-  const p4 = document.getElementById(`p4-${matchId}`).value.trim();
-
-  if (!p1 || !p2 || !p3 || !p4) {
-    alert("Invalid: missed area");
-    return;
-  }
-
-  let registrations = getRegistrations();
-
-  if (registrations.some(r => r.matchId === matchId && r.team === user.team)) {
-    alert("Already registered");
-    return;
+  let regs = getRegistrations();
+  
+  if (regs.some(r => r.matchId === matchId && r.team === user.team)) {
+    alert("Already registered"); return;
   }
 
   let selectedBatch = null;
-
   for (let batch of BATCHES) {
-    const count = registrations.filter(
-      r => r.matchId === matchId && r.batch === batch.name
-    ).length;
-
+    const count = regs.filter(r => r.matchId === matchId && r.batch === batch.name).length;
     if (count < MAX_TEAMS_PER_BATCH) {
       selectedBatch = batch;
       break;
     }
   }
 
-  if (!selectedBatch) {
-    alert("All batches full");
-    return;
-  }
+  if(!selectedBatch) { alert("All batches full"); return; }
 
-  registrations.push({
-    matchId,
-    team: user.team,
-    batch: selectedBatch.name,
-    time: selectedBatch.time,
-    players: [p1, p2, p3, p4],
+  regs.push({
+    matchId, team: user.team, batch: selectedBatch.name, time: selectedBatch.time,
+    players: [p1,p2,p3,p4], paid: (localStorage.getItem("paymentMode")==="paid"),
     registeredAt: new Date().toLocaleString()
   });
-
-  saveRegistrations(registrations);
+  
+  setData("registrations", regs);
+  alert("Registration Successful!");
   loadMatches();
 }
 
-/*************************************************
- * BATCH DISPLAY
- *************************************************/
 function renderBatchTeams(matchId) {
   const box = document.getElementById(`batch-teams-${matchId}`);
   if (!box) return;
@@ -264,32 +288,23 @@ function renderBatchTeams(matchId) {
   let html = "";
 
   BATCHES.forEach(batch => {
-    const teams = registrations.filter(
-      r => r.matchId === matchId && r.batch === batch.name
-    );
-
+    const teams = registrations.filter(r => r.matchId === matchId && r.batch === batch.name);
     html += `
-      <div class="batch-box">
+      <div class="batch-box" style="margin-top:10px;">
         <h4>${batch.name} (${teams.length}/12)</h4>
-        ${
-          teams.length === 0
-            ? `<p>No teams yet</p>`
+        ${ teams.length === 0
+            ? `<p style="font-size:12px; color:#aaa;">No teams yet</p>`
             : `<ul>${teams.map((t,i)=>`<li>${i+1}. ${t.team}</li>`).join("")}</ul>`
         }
       </div>
     `;
   });
-
   box.innerHTML = html;
 }
 
-/*************************************************
- * MY MATCHES
- *************************************************/
 function loadMyMatches() {
   const box = document.getElementById("myMatches");
   if (!box) return;
-
   const user = JSON.parse(localStorage.getItem("user"));
   const regs = getRegistrations().filter(r => r.team === user.team);
 
@@ -312,7 +327,254 @@ function loadMyMatches() {
 }
 
 /*************************************************
- * AUTO CLEAR AT 9 PM
+ * ADMIN PANEL LOGIC (TABS & CRUD)
+ *************************************************/
+
+function showTab(tabName) {
+  // Hide all contents
+  document.querySelectorAll('.tab-content').forEach(d => {
+    d.style.display = 'none';
+    d.classList.remove('active');
+  });
+  
+  // Remove active from buttons
+  document.querySelectorAll('.admin-tabs button').forEach(b => b.classList.remove('active'));
+
+  // Show selected
+  const activeContent = document.getElementById(`tab-${tabName}`);
+  if(activeContent) {
+      activeContent.style.display = 'block';
+      activeContent.classList.add('active');
+  }
+
+  // Highlight button
+  const buttons = document.querySelectorAll('.admin-tabs button');
+  buttons.forEach(btn => {
+    if(btn.innerText.toLowerCase().includes(tabName.substring(0,4))) {
+       btn.classList.add('active');
+    }
+  });
+
+  loadAdminTabs(tabName);
+}
+
+function loadAdminTabs(tabName) {
+  if (tabName === 'matches' || !tabName) renderAdminMatches();
+  if (tabName === 'users') renderAdminUsers();
+  if (tabName === 'teams') renderAdminTeams();
+  if (tabName === 'settings') loadPaymentSettings();
+}
+
+// --- TAB 1: MATCH MANAGEMENT ---
+function saveMatch() {
+  const title = document.getElementById("m-title").value;
+  const map = document.getElementById("m-map").value;
+  const time = document.getElementById("m-time").value; // IDP Time
+
+  if (!title || !map || !time) { alert("Please fill in ALL fields!"); return; }
+
+  const matches = getMatches();
+  matches.push({ id: Date.now(), title, map, time });
+  setData("matches", matches);
+
+  document.getElementById("m-title").value = "";
+  document.getElementById("m-map").value = "";
+  document.getElementById("m-time").value = "";
+
+  alert("Match Created Successfully!");
+  renderAdminMatches();
+}
+
+function renderAdminMatches() {
+  const list = document.getElementById("adminMatchList");
+  if(!list) return;
+  const matches = getMatches();
+  list.innerHTML = "";
+
+  if (matches.length === 0) {
+    list.innerHTML = `<p style="color:#666; text-align:center;">No matches created yet.</p>`;
+    return;
+  }
+
+  matches.forEach((m, index) => {
+    const div = document.createElement("div");
+    div.className = "match-card";
+    div.innerHTML = `
+      <h3>${m.title}</h3>
+      <p style="color:#aaa;">Map: ${m.map}</p>
+      <p style="color:#00e5ff;">IDP Time: ${m.time}</p>
+      <button onclick="deleteMatch(${index})" 
+              style="background:#ff3333; color:white; border:none; padding:8px; border-radius:4px; margin-top:10px; cursor:pointer;">
+        Delete Match
+      </button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function deleteMatch(index) {
+  if (confirm("Delete this match?")) {
+    const matches = getMatches();
+    matches.splice(index, 1);
+    setData("matches", matches);
+    renderAdminMatches();
+  }
+}
+
+// --- TAB 2: USER MANAGEMENT ---
+function renderAdminUsers() {
+  const list = document.getElementById("adminUserList");
+  if(!list) return;
+  const users = getUsers();
+  list.innerHTML = "";
+
+  if (users.length === 0) {
+    list.innerHTML = `<p style="color:#666; text-align:center;">No registered users.</p>`;
+    return;
+  }
+
+  users.forEach((u, index) => {
+    const div = document.createElement("div");
+    div.className = "match-card";
+    div.innerHTML = `
+      <h4 style="color:#3fb8ff">${u.team}</h4>
+      <p>Mobile: ${u.mobile} | Pass: ${u.password}</p>
+      <button onclick="editUser(${index})" style="padding:5px 10px; margin-right:5px;">Edit Pass</button>
+      <button onclick="deleteUser(${index})" style="background:#ff3333; color:white; padding:5px 10px;">Remove</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function deleteUser(index) {
+  const users = getUsers();
+  users.splice(index, 1);
+  setData("users", users);
+  renderAdminUsers();
+}
+
+function editUser(index) {
+  const users = getUsers();
+  const newPass = prompt("Enter new password for " + users[index].team, users[index].password);
+  if(newPass) {
+    users[index].password = newPass;
+    setData("users", users);
+    renderAdminUsers();
+  }
+}
+
+// --- TAB 3: TEAMS & PDF ---
+function renderAdminTeams() {
+  const list = document.getElementById("adminTeamList");
+  if(!list) return;
+  const regs = getRegistrations();
+  list.innerHTML = "";
+
+  if (regs.length === 0) {
+    list.innerHTML = `<p style="color:#666; text-align:center;">No teams registered.</p>`;
+    return;
+  }
+
+  regs.forEach((r, index) => {
+    const div = document.createElement("div");
+    div.className = "match-card";
+    div.innerHTML = `
+      <h4 style="color:#00e5ff">${r.team} <span style="font-size:12px; color:#aaa;">(${r.batch})</span></h4>
+      <p style="font-size:12px;">Players: ${r.players.join(", ")}</p>
+      <p>Status: ${r.paid ? '<span style="color:gold">PAID</span>' : '<span style="color:#2ecc71">FREE</span>'}</p>
+      <button onclick="deleteTeam(${index})" style="background:#ff4d4d; padding:5px; font-size:12px; margin-top:5px;">Remove Team</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function deleteTeam(index) {
+  if(confirm("Remove this team from tournament?")) {
+    const regs = getRegistrations();
+    regs.splice(index, 1);
+    setData("registrations", regs);
+    renderAdminTeams();
+  }
+}
+
+// PDF Logic
+function downloadAdminPDF() {
+  if (!window.jspdf) { alert("PDF library not loaded"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const registrations = getRegistrations();
+  let y = 10;
+
+  doc.text("Nighthawks FF - Teams Report", 10, y); y += 10;
+  
+  registrations.forEach((r, i) => {
+    doc.text(`${i + 1}. ${r.team} | ${r.batch} | ${r.paid ? 'PAID':'FREE'}`, 10, y); y += 6;
+    doc.setFontSize(10);
+    doc.text(`   Players: ${r.players.join(", ")}`, 10, y); y += 8;
+    doc.setFontSize(16);
+    if (y > 280) { doc.addPage(); y = 10; }
+  });
+  doc.save("nighthawks-teams.pdf");
+}
+
+function downloadUsersPDF() {
+  if (!window.jspdf) { alert("PDF library not loaded"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const users = getUsers();
+  let y = 10;
+
+  doc.text("Registered Users List", 10, y); y += 10;
+  doc.setFontSize(12);
+  
+  users.forEach((u, i) => {
+    doc.text(`${i+1}. ${u.team} | ${u.mobile}`, 10, y); y += 7;
+    if (y > 280) { doc.addPage(); y = 10; }
+  });
+  doc.save("nighthawks-users.pdf");
+}
+
+// --- TAB 4: SETTINGS (PAYMENT) ---
+function loadPaymentSettings() {
+  const mode = localStorage.getItem("paymentMode") || "free";
+  const url = localStorage.getItem("qrCodeUrl") || "";
+  
+  const paySelect = document.getElementById("paymentMode");
+  const qrInput = document.getElementById("qrCodeUrl");
+  const qrSection = document.getElementById("qrSection");
+  const regStatus = document.getElementById("regStatusDisplay");
+
+  if(paySelect) paySelect.value = mode;
+  if(qrInput) qrInput.value = url;
+  
+  if(qrSection) {
+    qrSection.style.display = (mode === "paid") ? "block" : "none";
+    document.getElementById("previewQR").src = url;
+  }
+  
+  if(regStatus) {
+    const open = localStorage.getItem("registrationOpen") === "true";
+    regStatus.innerText = open ? "Status: OPEN" : "Status: CLOSED";
+    regStatus.style.color = open ? "#2ecc71" : "#ff4d4d";
+  }
+}
+
+function savePaymentSettings() {
+  const mode = document.getElementById("paymentMode").value;
+  const url = document.getElementById("qrCodeUrl").value;
+  
+  localStorage.setItem("paymentMode", mode);
+  localStorage.setItem("qrCodeUrl", url);
+  loadPaymentSettings();
+}
+
+function toggleReg(status) {
+  localStorage.setItem("registrationOpen", status);
+  loadPaymentSettings();
+}
+
+/*************************************************
+ * UTILITIES
  *************************************************/
 function autoClearAt9PM() {
   const now = new Date();
@@ -322,368 +584,46 @@ function autoClearAt9PM() {
   }
 }
 
+function startCountdown() {
+    const timerEl = document.getElementById("countdownTimer");
+    if (!timerEl) return;
+    
+    // Set deadline to 9:00 PM today
+    const now = new Date();
+    const deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 21, 0, 0); 
+    
+    setInterval(() => {
+        const diff = deadline - new Date();
+        if (diff <= 0) { timerEl.innerText = "CLOSED"; return; }
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / (1000 * 60)) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        timerEl.innerText = `${h}h ${m}m ${s}s`;
+    }, 1000);
+}
+
 /*************************************************
- * BOOTSTRAP (ONLY ONE)
+ * INITIALIZATION (BOOTSTRAP)
  *************************************************/
 document.addEventListener("DOMContentLoaded", () => {
   autoClearAt9PM();
 
+  // 1. Dashboard Logic
   if (document.getElementById("matches")) {
-    requireLogin();
+    if(!localStorage.getItem("user")) window.location.href = "index.html";
     loadMatches();
+    startCountdown();
   }
 
+  // 2. My Matches Logic
   if (document.getElementById("myMatches")) {
-    requireLogin();
+    if(!localStorage.getItem("user")) window.location.href = "index.html";
     loadMyMatches();
   }
 
-  if (document.getElementById("adminData")) {
-  requireAdmin();
-  showRegistrationStatus();
-}
-
-});
-
-// STATUS
-function showRegistrationStatus() {
-  const box = document.getElementById("regStatus");
-  if (!box) return;
-
-  const open = localStorage.getItem("registrationOpen") === "true";
-  box.innerText = open ? "Registration is OPEN" : "Registration is CLOSED";
-}
-
-// OPEN-CLOSE
-function openRegistration() {
-  localStorage.setItem("registrationOpen", "true");
-  showRegistrationStatus();
-  loadMatches(); // 🔥 FORCE UI REFRESH
-}
-
-function closeRegistration() {
-  localStorage.setItem("registrationOpen", "false");
-  showRegistrationStatus();
-  loadMatches(); // 🔥 FORCE UI REFRESH
-}
-const regOpen = localStorage.getItem("registrationOpen") === "true";
-
-
-// ADMIN PANEL
-function loadAdminPanel() {
-  const box = document.getElementById("adminData");
-  if (!box) return;
-
-  requireAdmin();
-
-  const matches = getMatches();
-  const registrations = getRegistrations();
-
-  if (registrations.length === 0) {
-    box.innerHTML = `<div class="empty-box">No registrations yet</div>`;
-    return;
-  }
-
-  box.innerHTML = "";
-
-  matches.forEach(match => {
-    const matchDiv = document.createElement("div");
-    matchDiv.className = "my-match-card";
-
-    matchDiv.innerHTML = `
-      <h2>${match.title}</h2>
-      <p>Map: ${match.map}</p>
-    `;
-
-    ["Batch 1", "Batch 2", "Batch 3"].forEach(batch => {
-      const teams = registrations.filter(
-        r => r.matchId === match.id && r.batch === batch
-      );
-
-      const batchDiv = document.createElement("div");
-      batchDiv.style.marginTop = "10px";
-
-      batchDiv.innerHTML = `
-        <h4>${batch} (${teams.length}/12)</h4>
-        ${
-          teams.length === 0
-            ? `<p class="empty-text">No teams</p>`
-            : `<ul>
-                ${teams
-                  .map(
-                    (t, i) => `
-                    <li>
-                      <strong>${i + 1}. ${t.team}</strong><br>
-                      Players: ${t.players.join(", ")}
-                    </li>
-                  `
-                  )
-                  .join("")}
-              </ul>`
-        }
-      `;
-
-      matchDiv.appendChild(batchDiv);
-    });
-
-    box.appendChild(matchDiv);
-  });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("adminData")) {
-    loadAdminPanel();
+  // 3. Admin Panel Logic
+  if (document.getElementById("adminMatchList")) {
+    requireAdmin();
+    showTab('matches'); // Load initial tab
   }
 });
-
-//DOWNLOAD-PDF
-function downloadAdminPDF() {
-  if (!window.jspdf) {
-    alert("PDF library not loaded");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-  const registrations = JSON.parse(localStorage.getItem("registrations")) || [];
-
-  let y = 10;
-
-  doc.setFontSize(16);
-  doc.text("Nighthawks FF - Admin Report", 10, y);
-  y += 10;
-
-  doc.setFontSize(12);
-  doc.text("USERS", 10, y);
-  y += 8;
-
-  users.forEach((u, i) => {
-    doc.text(`${i + 1}. ${u.team} | ${u.mobile}`, 10, y);
-    y += 6;
-
-    if (y > 280) {
-      doc.addPage();
-      y = 10;
-    }
-  });
-
-  y += 10;
-  doc.text("REGISTERED TEAMS", 10, y);
-  y += 8;
-
-  registrations.forEach((r, i) => {
-    doc.text(
-      `${i + 1}. ${r.team} | ${r.batch} | ${r.time}`,
-      10,
-      y
-    );
-    y += 6;
-
-    r.players.forEach((p, idx) => {
-      doc.text(`   Player ${idx + 1}: ${p}`, 12, y);
-      y += 5;
-    });
-
-    y += 6;
-
-    if (y > 280) {
-      doc.addPage();
-      y = 10;
-    }
-  });
-
-  doc.save("nighthawks-registrations.pdf");
-}
-
-// USER PDF
-function downloadUsersPDF() {
-  if (!window.jspdf) {
-    alert("PDF library not loaded");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-
-  let y = 15;
-
-  doc.setFontSize(16);
-  doc.text("Nighthawks FF - Users List", 10, y);
-  y += 10;
-
-  if (users.length === 0) {
-    doc.setFontSize(12);
-    doc.text("No users found", 10, y);
-    doc.save("nighthawks-users.pdf");
-    return;
-  }
-
-  doc.setFontSize(12);
-
-  users.forEach((u, index) => {
-    doc.text(
-      `${index + 1}. Team: ${u.team} | Mobile: ${u.mobile}`,
-      10,
-      y
-    );
-    y += 7;
-
-    if (y > 280) {
-      doc.addPage();
-      y = 15;
-    }
-  });
-
-  doc.save("nighthawks-users.pdf");
-}
-
-// FORGOT PASSWORD
-function openForgotPassword() {
-  const mobile = prompt("Enter your registered mobile number (+91...)");
-  if (!mobile) return;
-
-  const users = getUsers();
-  const user = users.find(u => u.mobile === mobile);
-
-  if (!user) {
-    alert("Mobile not registered");
-    return;
-  }
-
-  // Generate 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000);
-  localStorage.setItem("resetOTP", otp);
-  localStorage.setItem("resetMobile", mobile);
-
-  // MOCK OTP (frontend only)
-  alert("Your OTP is: " + otp);
-
-  verifyOTP();
-}
-
-function verifyOTP() {
-  const enteredOTP = prompt("Enter OTP");
-  const realOTP = localStorage.getItem("resetOTP");
-
-  if (enteredOTP !== realOTP) {
-    alert("Invalid OTP");
-    return;
-  }
-
-  resetPassword();
-}
-
-function resetPassword() {
-  const newPass = prompt("Enter new password (8+ chars, letters & numbers)");
-  if (!newPass) return;
-
-  const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-  if (!passRegex.test(newPass)) {
-    alert("Password must be 8+ chars with letters & numbers");
-    return;
-  }
-
-  const users = getUsers();
-
-  if (users.find(u => u.password === newPass)) {
-    alert("Password already used by another user");
-    return;
-  }
-
-  const mobile = localStorage.getItem("resetMobile");
-  const user = users.find(u => u.mobile === mobile);
-  user.password = newPass;
-
-  saveUsers(users);
-
-  localStorage.removeItem("resetOTP");
-  localStorage.removeItem("resetMobile");
-
-  alert("Password reset successful. Login now.");
-}
-
-
-
-// MOB NUM STATUS
-function checkMobileStatus() {
-  const mobileInput = document.getElementById("mobile");
-  const registerBtn = document.getElementById("registerBtn");
-  const loginBtn = document.getElementById("loginBtn");
-  const msg = document.getElementById("msg");
-
-  const mobile = mobileInput.value.trim();
-
-  registerBtn.style.display = "none";
-  loginBtn.style.display = "none";
-  msg.innerText = "";
-
-  if (!/^\d{10}$/.test(mobile)) return;
-
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-  const exists = users.find(u => u.mobile === mobile);
-
-  if (exists) {
-    loginBtn.style.display = "block";
-    msg.innerText = "Mobile number found. Please login.";
-  } else {
-    registerBtn.style.display = "block";
-    msg.innerText = "New number detected. Please register.";
-  }
-}
-
-function register() {
-  const team = document.getElementById("team").value.trim();
-  const mobile = document.getElementById("mobile").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const msg = document.getElementById("msg");
-
-  if (!team || !mobile || !password) {
-    msg.innerText = "All fields are required";
-    return;
-  }
-
-  // ✅ 10 digit India mobile
-  if (!/^\d{10}$/.test(mobile)) {
-    msg.innerText = "Mobile number must be 10 digits";
-    return;
-  }
-
-  // ✅ password rules
-  if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
-    msg.innerText = "Password must be 8+ chars with letters & numbers";
-    return;
-  }
-
-  let users = JSON.parse(localStorage.getItem("users")) || [];
-
-  if (users.find(u => u.mobile === mobile)) {
-    msg.innerText = "User already exists. Please login.";
-    return;
-  }
-
-  if (users.find(u => u.password === password)) {
-    msg.innerText = "Password already used. Choose another.";
-    return;
-  }
-
-  users.push({ team, mobile, password });
-  localStorage.setItem("users", JSON.stringify(users));
-
-  msg.innerText = "Registered successfully. Now login.";
-
-  document.getElementById("registerBtn").style.display = "none";
-  document.getElementById("loginBtn").style.display = "block";
-}
-
-
-
-
-
-
-
-
-

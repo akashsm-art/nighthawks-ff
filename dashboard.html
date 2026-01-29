@@ -2,65 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Nighthawks FF | Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
 
 <body>
-  <div id="countdownBox" class="notice">
-  Registration closes in: <b id="countdownTimer">--:--:--</b>
-</div>
+  <div id="countdownBox" class="notice" style="text-align: center;">
+    Registration closes in: <b id="countdownTimer" style="color: #1e90ff;">--:--:--</b>
+  </div>
 
-  
-
-  <!-- ===============================
-       NAVBAR
-  ================================ -->
   <div class="nav-bar">
-
-    <!-- LEFT: LOGO + NAME -->
     <div class="nav-title">
-      <img
-        src="nighthawks-logo3.png"
-        alt="Nighthawks Logo"
-        style="height:32px; vertical-align:middle; margin-right:8px;"
-      >
+      <img src="nighthawks-logo3.png" alt="Logo" style="height:32px; vertical-align:middle; margin-right:8px;">
       Nighthawks FF
     </div>
-
-    <!-- RIGHT: LINKS -->
     <div class="nav-right">
       <a href="mymatches.html">My Matches</a>
       <button onclick="logout()">Logout</button>
     </div>
-
   </div>
 
-  <!-- ===============================
-       MAIN CONTENT
-  ================================ -->
   <div class="page">
     <h2 class="page-title">Available Matches</h2>
     <div id="regStatus" class="reg-status"></div>
-
-
-    <!-- Filled by script.js -->
     <div id="matches"></div>
   </div>
 
-  <!-- ===============================
-       SCRIPTS
-  ================================ -->
   <script src="script.js"></script>
-
-  <!--MATCH CARD-->
-  <div id="register-form-${match.id}"></div>
-<div class="batch-teams" id="batch-teams-${match.id}"></div>
-
-
-
 </body>
 </html>
