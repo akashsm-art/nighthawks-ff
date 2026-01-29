@@ -1135,3 +1135,231 @@ input:focus {
 .tab-content { display: none; animation: slideIn 0.3s ease; }
 .tab-content.active { display: block; }
 h3 { color: var(--primary-blue); margin-bottom: 10px; }
+
+
+
+
+/* ===============================
+   THEME VARIABLES
+================================ */
+:root {
+  --primary-blue: #00e5ff;       /* Cyan */
+  --deep-blue: #0066ff;          /* Royal Blue */
+  --bg-dark: #050505;            /* Pure Black */
+  --card-bg: #0f1216;            /* Dark Grey */
+  --text-white: #ffffff;
+  --glow-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+  --success-green: #2ecc71;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", sans-serif; }
+body { background: var(--bg-dark); color: var(--text-white); min-height: 100vh; overflow-x: hidden; }
+
+/* ===============================
+   GUILD SHOWCASE (NEW)
+================================ */
+.guild-section {
+  background: var(--card-bg);
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.guild-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.guild-btn {
+  background: #111;
+  border: 1px solid #333;
+  color: #aaa;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.guild-btn:hover {
+  border-color: var(--primary-blue);
+  color: #fff;
+}
+
+.guild-btn.active {
+  background: linear-gradient(90deg, var(--deep-blue), var(--primary-blue));
+  color: #000;
+  border: none;
+  box-shadow: 0 0 15px var(--primary-blue);
+}
+
+.guild-viewer {
+  position: relative;
+  width: 100%;
+  min-height: 280px; /* Adjust based on image size */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  border-radius: 12px;
+  border: 1px solid #222;
+  overflow: hidden;
+}
+
+.guild-slide {
+  display: none;
+  text-align: center;
+  width: 100%;
+  animation: fadeIn 0.5s ease;
+}
+
+.guild-slide.active {
+  display: block;
+}
+
+.guild-slide img {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  border: 2px solid #333;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8);
+}
+
+.leader-badge {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ===============================
+   EXISTING STYLES (PRESERVED)
+================================ */
+.nav-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 15px 20px; background: rgba(0,0,0,0.9);
+  border-bottom: 2px solid var(--deep-blue);
+  box-shadow: 0 0 15px rgba(0, 102, 255, 0.5);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.nav-title { display: flex; align-items: center; font-weight: bold; font-size: 18px; color: var(--primary-blue); }
+.nav-title img { height: 32px; margin-right: 10px; }
+
+.nav-right button, .nav-right a {
+  background: transparent; border: 1px solid var(--primary-blue); color: var(--primary-blue);
+  padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: 0.3s; text-decoration: none;
+  font-size: 14px; margin-left: 10px;
+}
+.nav-right button:hover, .nav-right a:hover {
+  background: var(--primary-blue); color: #000; box-shadow: var(--glow-shadow);
+}
+
+.page { max-width: 900px; margin: 0 auto; padding: 20px; }
+.match-card {
+  background: var(--card-bg); border: 1px solid #222; padding: 20px;
+  border-radius: 10px; margin-bottom: 20px; transition: 0.3s;
+}
+.match-card:hover { border-color: var(--deep-blue); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+.notice {
+  background: #0f1216; border: 1px solid #333; padding: 15px; text-align: center;
+  border-radius: 8px; margin-bottom: 20px; color: #aaa;
+}
+
+.register-box, .batch-box { margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; }
+.register-box input { width: 100%; padding: 10px; margin: 5px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 5px; }
+button { cursor: pointer; }
+.match-card button { width: 100%; padding: 10px; margin-top: 10px; background: var(--deep-blue); border: none; color: #fff; border-radius: 5px; font-weight: bold; }
+.match-card button:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+/* MODAL */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+.modal-box { background: #000; border: 1px solid var(--primary-blue); padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 0 30px rgba(0, 229, 255, 0.3); }
+
+/* AUTH */
+.auth-bg { background: url('nighthawks-logo.jpg') center/cover no-repeat fixed; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.auth-card { background: rgba(0,0,0,0.9); padding: 30px; border-radius: 15px; border: 1px solid #333; width: 350px; text-align: center; }
+.login-logo { height: 80px; margin-bottom: 20px; }
+.input-box { margin-bottom: 15px; }
+
+
+
+/* ===============================
+   PLAYER CARE (FLOATING BUTTON)
+================================ */
+.fab-btn {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--deep-blue), var(--primary-blue));
+  color: #000;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+  z-index: 1000;
+  animation: bounce 2s infinite;
+}
+
+.fab-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px var(--primary-blue);
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+  40% {transform: translateY(-10px);}
+  60% {transform: translateY(-5px);}
+}
+
+/* CARE MODAL CONTENT */
+.care-info {
+  text-align: left;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #111;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.care-info p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #ddd;
+}
+
+.care-info strong {
+  color: var(--primary-blue);
+}
+
+textarea.feedback-input {
+  width: 100%;
+  height: 80px;
+  background: #000;
+  border: 1px solid var(--primary-blue);
+  color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 10px;
+  resize: none;
+}

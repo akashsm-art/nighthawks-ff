@@ -627,3 +627,137 @@ document.addEventListener("DOMContentLoaded", () => {
     showTab('matches'); // Load initial tab
   }
 });
+
+/*************************************************
+ * GUILD SHOWCASE LOGIC (NEW)
+ *************************************************/
+function showGuild(guildName) {
+  // 1. Hide all slides
+  document.querySelectorAll('.guild-slide').forEach(slide => {
+    slide.classList.remove('active');
+  });
+
+  // 2. Deactivate all buttons
+  document.querySelectorAll('.guild-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  // 3. Activate selected
+  const selectedSlide = document.getElementById(`view-${guildName}`);
+  const selectedBtn = document.getElementById(`btn-${guildName}`);
+  
+  if(selectedSlide) selectedSlide.classList.add('active');
+  if(selectedBtn) selectedBtn.classList.add('active');
+}
+
+/*************************************************
+ * PLAYER CARE & FEEDBACK LOGIC
+ *************************************************/
+
+// 1. Toggle the Care Modal (Open/Close)
+function toggleCareModal() {
+  const modal = document.getElementById("careModal");
+  if (!modal) return;
+  
+  if (modal.style.display === "flex") {
+    modal.style.display = "none";
+  } else {
+    modal.style.display = "flex";
+  }
+}
+
+// 2. Send Feedback (User Side)
+function sendFeedback() {
+  const text = document.getElementById("feedbackText").value.trim();
+  // Attempt to get user info, default to "Guest" if not logged in
+  const userStr = localStorage.getItem("user");
+  const user = userStr ? JSON.parse(userStr) : null;
+  
+  if (!text) { 
+    alert("Please type a message!"); 
+    return; 
+  }
+
+  // Get existing feedbacks or initialize empty array
+  const feedbacks = JSON.parse(localStorage.getItem("feedbacks")) || [];
+  
+  feedbacks.push({
+    id: Date.now(),
+    team: user ? user.team : "Guest",
+    mobile: user ? user.mobile : "N/A",
+    message: text,
+    date: new Date().toLocaleString()
+  });
+
+  // Save back to storage
+  localStorage.setItem("feedbacks", JSON.stringify(feedbacks));
+  
+  alert("Message Sent! We will contact you shortly.");
+  document.getElementById("feedbackText").value = ""; // Clear input
+  toggleCareModal(); // Close modal
+}
+
+// 3. Load Feedbacks (Admin Panel)
+function loadFeedbacks() {
+  const list = document.getElementById("adminFeedbackList");
+  if (!list) return;
+  
+  const feedbacks = JSON.parse(localStorage.getItem("feedbacks")) || [];
+  list.innerHTML = "";
+
+  if (feedbacks.length === 0) {
+    list.innerHTML = `<div class="empty-box" style="text-align:center; padding:20px; color:#666;">No messages yet.</div>`;
+    return;
+  }
+
+  // Reverse to show newest messages first
+  feedbacks.reverse().forEach(f => {
+    const div = document.createElement("div");
+    div.className = "match-card"; // Reusing the card style for consistency
+    div.style.borderLeft = "4px solid #ff00de"; // Pink accent to distinguish feedbacks
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+        <h4 style="color:#fff; margin:0;">${f.team}</h4>
+        <small style="color:#aaa; font-size:12px;">${f.date}</small>
+      </div>
+      <p style="font-size:13px; color:#00e5ff; margin-bottom:8px;">Mobile: ${f.mobile}</p>
+      <div style="background:#111; padding:10px; border-radius:5px; border:1px solid #333; color:#ddd; font-style:italic;">
+        "${f.message}"
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// 4. Clear All Feedbacks (Admin Action)
+function clearFeedbacks() {
+  if (confirm("Are you sure you want to delete ALL messages?")) {
+    localStorage.removeItem("feedbacks");
+    loadFeedbacks(); // Refresh the list
+  }
+}
+
+// 5. Integrate with Admin Tabs
+// This overrides the existing loadAdminData to include the 'feedbacks' tab
+// Ensure this runs AFTER the original definition in your script
+if (typeof window.loadAdminData === 'function') {
+    const originalLoadAdminData = window.loadAdminData;
+    window.loadAdminData = function(tabName) {
+        // Run the original logic for matches, users, teams, etc.
+        originalLoadAdminData(tabName);
+        
+        // Add check for new feedback tab
+        if (tabName === 'feedbacks') {
+            loadFeedbacks();
+        }
+    };
+} else {
+    // Fallback if loadAdminData isn't defined globally yet
+    window.loadAdminData = function(tabName) {
+        if (tabName === 'matches' && typeof renderAdminMatches === 'function') renderAdminMatches();
+        if (tabName === 'users' && typeof renderAdminUsers === 'function') renderAdminUsers();
+        if (tabName === 'teams' && typeof renderAdminTeams === 'function') renderAdminTeams();
+        if (tabName === 'settings' && typeof loadSettings === 'function') loadSettings();
+        if (tabName === 'feedbacks') loadFeedbacks();
+    };
+}
